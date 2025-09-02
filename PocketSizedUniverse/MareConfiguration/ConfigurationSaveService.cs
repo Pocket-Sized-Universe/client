@@ -1,4 +1,4 @@
-﻿using MareSynchronos.MareConfiguration.Configurations;
+﻿using PocketSizedUniverse.MareConfiguration.Configurations;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Reflection;

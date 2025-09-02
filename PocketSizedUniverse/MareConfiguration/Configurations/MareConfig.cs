@@ -1,4 +1,4 @@
-﻿using MareSynchronos.MareConfiguration.Models;
+﻿using PocketSizedUniverse.MareConfiguration.Models;
 using PocketSizedUniverse.UI;
 using Microsoft.Extensions.Logging;
 

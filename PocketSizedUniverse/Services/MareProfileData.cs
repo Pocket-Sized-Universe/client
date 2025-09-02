@@ -1,4 +1,4 @@
-﻿namespace MareSynchronos.Services;
+﻿namespace PocketSizedUniverse.Services;
 
 public record MareProfileData(bool IsFlagged, bool IsNSFW, string Base64ProfilePicture, string Base64SupporterPicture, string Description)
 {

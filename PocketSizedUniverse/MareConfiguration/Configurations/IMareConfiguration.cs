@@ -1,4 +1,4 @@
-﻿namespace MareSynchronos.MareConfiguration.Configurations;
+﻿namespace PocketSizedUniverse.MareConfiguration.Configurations;
 
 public interface IMareConfiguration
 {

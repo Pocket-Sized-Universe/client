@@ -1,4 +1,4 @@
-﻿namespace MareSynchronos.WebAPI.SignalR;
+﻿namespace PocketSizedUniverse.WebAPI.SignalR;
 
 public class MareAuthFailureException : Exception
 {

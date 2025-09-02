@@ -1,4 +1,4 @@
-﻿using MareSynchronos.MareConfiguration.Configurations;
+﻿using PocketSizedUniverse.MareConfiguration.Configurations;
 using System.Text.Json;
 
 namespace PocketSizedUniverse.MareConfiguration;

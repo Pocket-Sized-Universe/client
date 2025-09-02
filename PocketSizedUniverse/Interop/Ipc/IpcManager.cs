@@ -1,4 +1,4 @@
-﻿using MareSynchronos.Services.Mediator;
+﻿using PocketSizedUniverse.Services.Mediator;
 using Microsoft.Extensions.Logging;
 
 namespace PocketSizedUniverse.Interop.Ipc;

@@ -6,7 +6,7 @@ using PocketSizedUniverse.MareConfiguration.Models;
 using PocketSizedUniverse.Services.Mediator;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NotificationType = MareSynchronos.MareConfiguration.Models.NotificationType;
+using NotificationType = PocketSizedUniverse.MareConfiguration.Models.NotificationType;
 
 namespace PocketSizedUniverse.Services;
 

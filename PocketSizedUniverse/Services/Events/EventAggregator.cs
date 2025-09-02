@@ -1,4 +1,4 @@
-﻿using MareSynchronos.Services.Mediator;
+﻿using PocketSizedUniverse.Services.Mediator;
 using PocketSizedUniverse.Utils;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

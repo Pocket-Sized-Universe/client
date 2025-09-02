@@ -1,4 +1,4 @@
-﻿using MareSynchronos.Interop.Ipc;
+﻿using PocketSizedUniverse.Interop.Ipc;
 using PocketSizedUniverse.MareConfiguration;
 using PocketSizedUniverse.Services;
 using PocketSizedUniverse.Services.Mediator;

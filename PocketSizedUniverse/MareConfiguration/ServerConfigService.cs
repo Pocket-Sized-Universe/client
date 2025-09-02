@@ -1,4 +1,4 @@
-﻿using MareSynchronos.MareConfiguration.Configurations;
+﻿using PocketSizedUniverse.MareConfiguration.Configurations;
 
 namespace PocketSizedUniverse.MareConfiguration;
 

@@ -1,4 +1,4 @@
-﻿namespace MareSynchronos.PlayerData.Data;
+﻿namespace PocketSizedUniverse.PlayerData.Data;
 
 public class CharacterDataFragment
 {

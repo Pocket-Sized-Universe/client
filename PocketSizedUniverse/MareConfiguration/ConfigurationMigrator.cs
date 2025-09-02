@@ -1,4 +1,4 @@
-﻿using MareSynchronos.WebAPI;
+﻿using PocketSizedUniverse.WebAPI;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 

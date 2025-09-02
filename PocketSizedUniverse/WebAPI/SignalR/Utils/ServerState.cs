@@ -1,4 +1,4 @@
-﻿namespace MareSynchronos.WebAPI.SignalR.Utils;
+﻿namespace PocketSizedUniverse.WebAPI.SignalR.Utils;
 
 public enum ServerState
 {

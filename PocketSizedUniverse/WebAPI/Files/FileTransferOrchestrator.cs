@@ -1,4 +1,4 @@
-﻿using MareSynchronos.MareConfiguration;
+﻿using PocketSizedUniverse.MareConfiguration;
 using PocketSizedUniverse.Services.Mediator;
 using PocketSizedUniverse.WebAPI.Files.Models;
 using PocketSizedUniverse.WebAPI.SignalR;
@@ -28,7 +28,7 @@ public class FileTransferOrchestrator : DisposableMediatorSubscriberBase
         _tokenProvider = tokenProvider;
         _httpClient = httpClient;
         var ver = Assembly.GetExecutingAssembly().GetName().Version;
-        _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MareSynchronos", ver!.Major + "." + ver!.Minor + "." + ver!.Build));
+        _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("PocketSizedUniverse", ver!.Major + "." + ver!.Minor + "." + ver!.Build));
 
         _availableDownloadSlots = mareConfig.Current.ParallelDownloads;
         _downloadSemaphore = new(_availableDownloadSlots, _availableDownloadSlots);

@@ -8,7 +8,7 @@ using PocketSizedUniverse.PlayerData.Handlers;
 using PocketSizedUniverse.Services;
 using PocketSizedUniverse.Services.Mediator;
 using Microsoft.Extensions.Logging;
-using CharacterData = MareSynchronos.PlayerData.Data.CharacterData;
+using CharacterData = PocketSizedUniverse.PlayerData.Data.CharacterData;
 
 namespace PocketSizedUniverse.PlayerData.Factories;
 

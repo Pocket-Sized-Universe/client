@@ -87,9 +87,9 @@ public sealed class Plugin : IDalamudPlugin
         })
         .ConfigureServices(collection =>
         {
-            collection.AddSingleton(new WindowSystem("MareSynchronos"));
+            collection.AddSingleton(new WindowSystem("PocketSizedUniverse"));
             collection.AddSingleton<FileDialogManager>();
-            collection.AddSingleton(new Dalamud.Localization("MareSynchronos.Localization.", "", useEmbedded: true));
+            collection.AddSingleton(new Dalamud.Localization("PocketSizedUniverse.Localization.", "", useEmbedded: true));
 
             // add mare related singletons
             collection.AddSingleton<MareMediator>();
@@ -168,7 +168,7 @@ public sealed class Plugin : IDalamudPlugin
             {
                 var httpClient = new HttpClient();
                 var ver = Assembly.GetExecutingAssembly().GetName().Version;
-                httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MareSynchronos", ver!.Major + "." + ver!.Minor + "." + ver!.Build));
+                httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("PocketSizedUniverse", ver!.Major + "." + ver!.Minor + "." + ver!.Build));
                 return httpClient;
             });
             collection.AddSingleton((s) => new MareConfigService(pluginInterface.ConfigDirectory.FullName));

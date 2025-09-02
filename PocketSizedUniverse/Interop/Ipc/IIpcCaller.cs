@@ -1,4 +1,4 @@
-﻿namespace MareSynchronos.Interop.Ipc;
+﻿namespace PocketSizedUniverse.Interop.Ipc;
 
 public interface IIpcCaller : IDisposable
 {

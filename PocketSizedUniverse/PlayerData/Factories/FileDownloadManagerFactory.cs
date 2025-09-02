@@ -1,4 +1,4 @@
-﻿using MareSynchronos.FileCache;
+﻿using PocketSizedUniverse.FileCache;
 using PocketSizedUniverse.Services.Mediator;
 using PocketSizedUniverse.WebAPI.Files;
 using Microsoft.Extensions.Logging;

@@ -58,7 +58,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         ServerConfigurationManager serverManager, MareMediator mediator, FileUploadManager fileTransferManager,
         TagHandler tagHandler, DrawEntityFactory drawEntityFactory, SelectTagForPairUi selectTagForPairUi, SelectPairForTagUi selectPairForTagUi,
         PerformanceCollectorService performanceCollectorService, IpcManager ipcManager)
-        : base(logger, mediator, "###MareSynchronosMainUI", performanceCollectorService)
+        : base(logger, mediator, "###PocketSizedUniverseMainUI", performanceCollectorService)
     {
         _uiSharedService = uiShared;
         _configService = configService;
@@ -114,11 +114,11 @@ public class CompactUi : WindowMediatorSubscriberBase
 #if DEBUG
         string dev = "Dev Build";
         var ver = Assembly.GetExecutingAssembly().GetName().Version!;
-        WindowName = $"Pocket Sized Universe {dev} ({ver.Major}.{ver.Minor}.{ver.Build})###MareSynchronosMainUI";
+        WindowName = $"Pocket Sized Universe {dev} ({ver.Major}.{ver.Minor}.{ver.Build})###PocketSizedUniverseMainUI";
         Toggle();
 #else
         var ver = Assembly.GetExecutingAssembly().GetName().Version;
-        WindowName = "Pocket Sized Universe " + ver.Major + "." + ver.Minor + "." + ver.Build + "###MareSynchronosMainUI";
+        WindowName = "Pocket Sized Universe " + ver.Major + "." + ver.Minor + "." + ver.Build + "###PocketSizedUniverseMainUI";
 #endif
         Mediator.Subscribe<SwitchToMainUiMessage>(this, (_) => IsOpen = true);
         Mediator.Subscribe<SwitchToIntroUiMessage>(this, (_) => IsOpen = false);

@@ -1,4 +1,4 @@
-﻿using MareSynchronos.FileCache;
+﻿using PocketSizedUniverse.FileCache;
 using PocketSizedUniverse.Interop.Ipc;
 using PocketSizedUniverse.PlayerData.Handlers;
 using PocketSizedUniverse.PlayerData.Pairs;

@@ -5,4 +5,4 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>", Scope = "member", Target = "~M:MareSynchronos.Services.CharaDataManager.AttachPoseData(PocketSizedUniverse.API.Dto.CharaData.PoseEntry,MareSynchronos.Services.CharaData.Models.CharaDataExtendedUpdateDto)")]
+[assembly: SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>", Scope = "member", Target = "~M:PocketSizedUniverse.Services.CharaDataManager.AttachPoseData(PocketSizedUniverse.API.Dto.CharaData.PoseEntry,PocketSizedUniverse.Services.CharaData.Models.CharaDataExtendedUpdateDto)")]

@@ -1,4 +1,4 @@
-﻿namespace MareSynchronos.PlayerData.Pairs;
+﻿namespace PocketSizedUniverse.PlayerData.Pairs;
 
 public record OptionalPluginWarning
 {

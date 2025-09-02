@@ -1,4 +1,4 @@
-﻿namespace MareSynchronos.Services.Events;
+﻿namespace PocketSizedUniverse.Services.Events;
 
 public enum EventSeverity
 {

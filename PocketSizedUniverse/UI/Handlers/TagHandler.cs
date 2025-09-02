@@ -1,4 +1,4 @@
-﻿using MareSynchronos.Services.ServerConfiguration;
+﻿using PocketSizedUniverse.Services.ServerConfiguration;
 
 namespace PocketSizedUniverse.UI.Handlers;
 
