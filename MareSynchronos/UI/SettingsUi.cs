@@ -1940,7 +1940,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted("Community and Support:");
         ImGui.SameLine();
-        if (ImGui.Button("Mare Synchronos Discord"))
+        if (ImGui.Button("Pocket Sized Universe Discord"))
         {
             Util.OpenLink("https://discord.gg/mpNdkrTRjW");
         }
