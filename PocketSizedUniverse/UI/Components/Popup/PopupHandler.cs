@@ -2,12 +2,12 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
 
-namespace MareSynchronos.UI.Components.Popup;
+namespace PocketSizedUniverse.UI.Components.Popup;
 
 public class PopupHandler : WindowMediatorSubscriberBase
 {

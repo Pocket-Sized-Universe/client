@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace MareSynchronos.WebAPI.Files.Models;
+namespace PocketSizedUniverse.WebAPI.Files.Models;
 
 public class ProgressableStreamContent : StreamContent
 {

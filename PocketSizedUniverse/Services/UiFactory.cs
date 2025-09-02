@@ -1,13 +1,13 @@
-﻿using MareSynchronos.API.Dto.Group;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
-using MareSynchronos.UI;
-using MareSynchronos.UI.Components.Popup;
-using MareSynchronos.WebAPI;
+﻿using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
+using PocketSizedUniverse.UI;
+using PocketSizedUniverse.UI.Components.Popup;
+using PocketSizedUniverse.WebAPI;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.Services;
+namespace PocketSizedUniverse.Services;
 
 public class UiFactory
 {

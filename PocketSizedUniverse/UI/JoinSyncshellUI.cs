@@ -2,17 +2,17 @@
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.API.Data.Enum;
-using MareSynchronos.API.Data.Extensions;
-using MareSynchronos.API.Dto;
-using MareSynchronos.API.Dto.Group;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Utils;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.API.Data.Enum;
+using PocketSizedUniverse.API.Data.Extensions;
+using PocketSizedUniverse.API.Dto;
+using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Utils;
+using PocketSizedUniverse.WebAPI;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.UI;
+namespace PocketSizedUniverse.UI;
 
 internal class JoinSyncshellUI : WindowMediatorSubscriberBase
 {

@@ -1,11 +1,11 @@
-﻿using MareSynchronos.API.Data;
-using MareSynchronos.API.Dto;
-using MareSynchronos.API.Dto.User;
+﻿using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.API.Dto;
+using PocketSizedUniverse.API.Dto.User;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System.Text;
 
-namespace MareSynchronos.WebAPI;
+namespace PocketSizedUniverse.WebAPI;
 
 #pragma warning disable MA0040
 public partial class ApiController

@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace MareSynchronos.Utils;
+namespace PocketSizedUniverse.Utils;
 
 public static class Crypto
 {

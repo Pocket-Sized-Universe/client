@@ -1,6 +1,6 @@
 ﻿using MareSynchronos.MareConfiguration.Models;
 
-namespace MareSynchronos.MareConfiguration.Configurations;
+namespace PocketSizedUniverse.MareConfiguration.Configurations;
 
 public class UidNotesConfig : IMareConfiguration
 {

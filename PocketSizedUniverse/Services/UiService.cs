@@ -1,13 +1,13 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.UI;
-using MareSynchronos.UI.Components.Popup;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.UI;
+using PocketSizedUniverse.UI.Components.Popup;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.Services;
+namespace PocketSizedUniverse.Services;
 
 public sealed class UiService : DisposableMediatorSubscriberBase
 {

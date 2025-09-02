@@ -4,19 +4,19 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.API.Dto.CharaData;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.MareConfiguration.Models;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services;
-using MareSynchronos.Services.CharaData;
-using MareSynchronos.Services.CharaData.Models;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
-using MareSynchronos.Utils;
+using PocketSizedUniverse.API.Dto.CharaData;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.MareConfiguration.Models;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.CharaData;
+using PocketSizedUniverse.Services.CharaData.Models;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
+using PocketSizedUniverse.Utils;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.UI;
+namespace PocketSizedUniverse.UI;
 
 internal sealed partial class CharaDataHubUi : WindowMediatorSubscriberBase
 {

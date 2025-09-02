@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http.Connections;
 
-namespace MareSynchronos.MareConfiguration.Models;
+namespace PocketSizedUniverse.MareConfiguration.Models;
 
 [Serializable]
 public class ServerStorage

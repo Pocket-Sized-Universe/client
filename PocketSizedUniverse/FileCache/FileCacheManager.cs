@@ -1,15 +1,15 @@
 ﻿using K4os.Compression.LZ4.Legacy;
-using MareSynchronos.Interop.Ipc;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Utils;
+using PocketSizedUniverse.Interop.Ipc;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Utils;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
 
-namespace MareSynchronos.FileCache;
+namespace PocketSizedUniverse.FileCache;
 
 public sealed class FileCacheManager : IHostedService
 {

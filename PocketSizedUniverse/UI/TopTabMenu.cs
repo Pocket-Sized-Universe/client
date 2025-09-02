@@ -3,14 +3,14 @@ using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
-using MareSynchronos.API.Data.Enum;
-using MareSynchronos.API.Data.Extensions;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.API.Data.Enum;
+using PocketSizedUniverse.API.Data.Extensions;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.WebAPI;
 using System.Numerics;
 
-namespace MareSynchronos.UI;
+namespace PocketSizedUniverse.UI;
 
 public class TopTabMenu
 {

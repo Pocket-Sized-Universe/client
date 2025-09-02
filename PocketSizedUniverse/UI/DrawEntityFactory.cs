@@ -1,16 +1,16 @@
-﻿using MareSynchronos.API.Dto.Group;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
-using MareSynchronos.UI.Components;
-using MareSynchronos.UI.Handlers;
-using MareSynchronos.WebAPI;
+﻿using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
+using PocketSizedUniverse.UI.Components;
+using PocketSizedUniverse.UI.Handlers;
+using PocketSizedUniverse.WebAPI;
 using Microsoft.Extensions.Logging;
 using System.Collections.Immutable;
 
-namespace MareSynchronos.UI;
+namespace PocketSizedUniverse.UI;
 
 public class DrawEntityFactory
 {

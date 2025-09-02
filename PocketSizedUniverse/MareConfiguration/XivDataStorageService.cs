@@ -1,6 +1,6 @@
 ﻿using MareSynchronos.MareConfiguration.Configurations;
 
-namespace MareSynchronos.MareConfiguration;
+namespace PocketSizedUniverse.MareConfiguration;
 
 public class XivDataStorageService : ConfigurationServiceBase<XivDataStorageConfig>
 {

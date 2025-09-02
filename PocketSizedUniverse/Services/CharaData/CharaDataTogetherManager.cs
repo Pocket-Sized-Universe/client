@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MareSynchronos.Services.CharaData
+namespace PocketSizedUniverse.Services.CharaData
 {
     internal class CharaDataTogetherManager
     {

@@ -1,12 +1,12 @@
-﻿using MareSynchronos.API.Data;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Utils;
-using MareSynchronos.WebAPI;
-using MareSynchronos.WebAPI.Files;
+﻿using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Utils;
+using PocketSizedUniverse.WebAPI;
+using PocketSizedUniverse.WebAPI.Files;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.PlayerData.Pairs;
+namespace PocketSizedUniverse.PlayerData.Pairs;
 
 public class VisibleUserDataDistributor : DisposableMediatorSubscriberBase
 {

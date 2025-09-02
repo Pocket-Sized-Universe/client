@@ -3,17 +3,17 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.API.Data.Enum;
-using MareSynchronos.FileCache;
-using MareSynchronos.Interop.Ipc;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Utils;
+using PocketSizedUniverse.API.Data.Enum;
+using PocketSizedUniverse.FileCache;
+using PocketSizedUniverse.Interop.Ipc;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Utils;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
 
-namespace MareSynchronos.UI;
+namespace PocketSizedUniverse.UI;
 
 public class DataAnalysisUi : WindowMediatorSubscriberBase
 {

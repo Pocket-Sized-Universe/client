@@ -1,21 +1,21 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using K4os.Compression.LZ4.Legacy;
-using MareSynchronos.API.Data;
-using MareSynchronos.API.Dto.CharaData;
-using MareSynchronos.Interop.Ipc;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.PlayerData.Factories;
-using MareSynchronos.PlayerData.Handlers;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services.CharaData.Models;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Utils;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.API.Dto.CharaData;
+using PocketSizedUniverse.Interop.Ipc;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.PlayerData.Factories;
+using PocketSizedUniverse.PlayerData.Handlers;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services.CharaData.Models;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Utils;
+using PocketSizedUniverse.WebAPI;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Text;
 
-namespace MareSynchronos.Services;
+namespace PocketSizedUniverse.Services;
 
 public sealed partial class CharaDataManager : DisposableMediatorSubscriberBase
 {

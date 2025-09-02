@@ -1,16 +1,16 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Colors;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.PlayerData.Handlers;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.WebAPI.Files;
-using MareSynchronos.WebAPI.Files.Models;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.PlayerData.Handlers;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.WebAPI.Files;
+using PocketSizedUniverse.WebAPI.Files.Models;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Numerics;
 
-namespace MareSynchronos.UI;
+namespace PocketSizedUniverse.UI;
 
 public class DownloadUi : WindowMediatorSubscriberBase
 {

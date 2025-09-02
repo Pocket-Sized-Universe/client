@@ -1,16 +1,16 @@
-﻿using MareSynchronos.API.Data;
-using MareSynchronos.API.Data.Enum;
-using MareSynchronos.API.Dto;
-using MareSynchronos.API.Dto.CharaData;
-using MareSynchronos.API.Dto.Group;
-using MareSynchronos.API.Dto.User;
-using MareSynchronos.MareConfiguration.Models;
-using MareSynchronos.Services.Mediator;
+﻿using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.API.Data.Enum;
+using PocketSizedUniverse.API.Dto;
+using PocketSizedUniverse.API.Dto.CharaData;
+using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.API.Dto.User;
+using PocketSizedUniverse.MareConfiguration.Models;
+using PocketSizedUniverse.Services.Mediator;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using static FFXIVClientStructs.FFXIV.Client.Game.UI.MapMarkerData.Delegates;
 
-namespace MareSynchronos.WebAPI;
+namespace PocketSizedUniverse.WebAPI;
 
 public partial class ApiController
 {

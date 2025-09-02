@@ -1,7 +1,7 @@
 ﻿using MareSynchronos.MareConfiguration.Models;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.WebAPI;
 
-namespace MareSynchronos.MareConfiguration.Configurations;
+namespace PocketSizedUniverse.MareConfiguration.Configurations;
 
 [Serializable]
 public class ServerConfig : IMareConfiguration

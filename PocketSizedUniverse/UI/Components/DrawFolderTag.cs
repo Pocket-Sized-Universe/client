@@ -1,13 +1,13 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.API.Data.Extensions;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.UI.Handlers;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.API.Data.Extensions;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.UI.Handlers;
+using PocketSizedUniverse.WebAPI;
 using System.Collections.Immutable;
 
-namespace MareSynchronos.UI.Components;
+namespace PocketSizedUniverse.UI.Components;
 
 public class DrawFolderTag : DrawFolderBase
 {

@@ -1,6 +1,6 @@
-﻿using MareSynchronos.API.Dto.Files;
+﻿using PocketSizedUniverse.API.Dto.Files;
 
-namespace MareSynchronos.WebAPI.Files.Models;
+namespace PocketSizedUniverse.WebAPI.Files.Models;
 
 public class UploadFileTransfer : FileTransfer
 {

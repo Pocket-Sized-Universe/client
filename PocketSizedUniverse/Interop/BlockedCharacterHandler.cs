@@ -3,7 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.Interop;
+namespace PocketSizedUniverse.Interop;
 
 public unsafe class BlockedCharacterHandler
 {

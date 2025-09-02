@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace MareSynchronos.Utils;
+namespace PocketSizedUniverse.Utils;
 
 public class RollingList<T> : IEnumerable<T>
 {

@@ -1,6 +1,6 @@
-﻿using MareSynchronos.API.Data;
+﻿using PocketSizedUniverse.API.Data;
 
-namespace MareSynchronos.PlayerData.Data;
+namespace PocketSizedUniverse.PlayerData.Data;
 
 public class FileReplacementDataComparer : IEqualityComparer<FileReplacementData>
 {

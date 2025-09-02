@@ -4,16 +4,16 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
-using MareSynchronos.API.Data;
-using MareSynchronos.API.Dto.User;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.API.Dto.User;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.WebAPI;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace MareSynchronos.UI;
+namespace PocketSizedUniverse.UI;
 
 public class EditProfileUi : WindowMediatorSubscriberBase
 {

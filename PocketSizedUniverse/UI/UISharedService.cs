@@ -10,18 +10,18 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
-using MareSynchronos.FileCache;
-using MareSynchronos.Interop.Ipc;
-using MareSynchronos.Localization;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.MareConfiguration.Models;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
-using MareSynchronos.Utils;
-using MareSynchronos.WebAPI;
-using MareSynchronos.WebAPI.SignalR;
+using PocketSizedUniverse.FileCache;
+using PocketSizedUniverse.Interop.Ipc;
+using PocketSizedUniverse.Localization;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.MareConfiguration.Models;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
+using PocketSizedUniverse.Utils;
+using PocketSizedUniverse.WebAPI;
+using PocketSizedUniverse.WebAPI.SignalR;
 using Microsoft.Extensions.Logging;
 using System.IdentityModel.Tokens.Jwt;
 using System.Numerics;
@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace MareSynchronos.UI;
+namespace PocketSizedUniverse.UI;
 
 public partial class UiSharedService : DisposableMediatorSubscriberBase
 {

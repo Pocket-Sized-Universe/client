@@ -1,12 +1,12 @@
-﻿using MareSynchronos.API.Data.Enum;
-using MareSynchronos.Interop.Ipc;
-using MareSynchronos.PlayerData.Factories;
-using MareSynchronos.PlayerData.Handlers;
-using MareSynchronos.Services.CharaData.Models;
-using MareSynchronos.Services.Mediator;
+﻿using PocketSizedUniverse.API.Data.Enum;
+using PocketSizedUniverse.Interop.Ipc;
+using PocketSizedUniverse.PlayerData.Factories;
+using PocketSizedUniverse.PlayerData.Handlers;
+using PocketSizedUniverse.Services.CharaData.Models;
+using PocketSizedUniverse.Services.Mediator;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.Services;
+namespace PocketSizedUniverse.Services;
 
 public sealed class CharaDataCharacterHandler : DisposableMediatorSubscriberBase
 {

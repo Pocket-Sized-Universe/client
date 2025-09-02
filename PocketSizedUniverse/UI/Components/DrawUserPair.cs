@@ -3,18 +3,18 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.API.Data.Extensions;
-using MareSynchronos.API.Dto.Group;
-using MareSynchronos.API.Dto.User;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
-using MareSynchronos.UI.Handlers;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.API.Data.Extensions;
+using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.API.Dto.User;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
+using PocketSizedUniverse.UI.Handlers;
+using PocketSizedUniverse.WebAPI;
 
-namespace MareSynchronos.UI.Components;
+namespace PocketSizedUniverse.UI.Components;
 
 public class DrawUserPair
 {

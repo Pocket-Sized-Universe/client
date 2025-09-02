@@ -1,16 +1,16 @@
 ﻿using MareSynchronos.FileCache;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.PlayerData.Services;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.PlayerData.Services;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
-namespace MareSynchronos;
+namespace PocketSizedUniverse;
 
 #pragma warning disable S125 // Sections of code should not be commented out
 /*

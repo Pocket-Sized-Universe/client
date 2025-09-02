@@ -1,15 +1,15 @@
 ﻿using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
-using MareSynchronos.FileCache;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.MareConfiguration.Models;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
-using MareSynchronos.UI;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.FileCache;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.MareConfiguration.Models;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
+using PocketSizedUniverse.UI;
+using PocketSizedUniverse.WebAPI;
 using System.Globalization;
 
-namespace MareSynchronos.Services;
+namespace PocketSizedUniverse.Services;
 
 public sealed class CommandManagerService : IDisposable
 {

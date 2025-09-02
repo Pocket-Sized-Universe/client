@@ -1,14 +1,14 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
-using MareSynchronos.API.Data;
-using MareSynchronos.Interop;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.Services.CharaData.Models;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
+using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.Interop;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.Services.CharaData.Models;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
 
-namespace MareSynchronos.Services;
+namespace PocketSizedUniverse.Services;
 
 public sealed class CharaDataNearbyManager : DisposableMediatorSubscriberBase
 {

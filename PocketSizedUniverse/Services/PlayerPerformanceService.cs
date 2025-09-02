@@ -1,14 +1,14 @@
-using MareSynchronos.API.Data;
-using MareSynchronos.FileCache;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.PlayerData.Handlers;
-using MareSynchronos.Services.Events;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.UI;
-using MareSynchronos.WebAPI.Files.Models;
+using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.FileCache;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.PlayerData.Handlers;
+using PocketSizedUniverse.Services.Events;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.UI;
+using PocketSizedUniverse.WebAPI.Files.Models;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.Services;
+namespace PocketSizedUniverse.Services;
 
 public class PlayerPerformanceService
 {

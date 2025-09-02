@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Text.Json;
 
-namespace MareSynchronos.MareConfiguration;
+namespace PocketSizedUniverse.MareConfiguration;
 
 public class ConfigurationSaveService : IHostedService
 {

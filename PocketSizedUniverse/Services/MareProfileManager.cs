@@ -1,12 +1,12 @@
-﻿using MareSynchronos.API.Data;
-using MareSynchronos.API.Data.Comparer;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.WebAPI;
+﻿using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.API.Data.Comparer;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.WebAPI;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
-namespace MareSynchronos.Services;
+namespace PocketSizedUniverse.Services;
 
 public class MareProfileManager : MediatorSubscriberBase
 {

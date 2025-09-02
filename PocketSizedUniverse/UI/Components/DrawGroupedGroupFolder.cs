@@ -1,11 +1,11 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.UI.Handlers;
+using PocketSizedUniverse.UI.Handlers;
 using System.Collections.Immutable;
 using System.Numerics;
 
-namespace MareSynchronos.UI.Components;
+namespace PocketSizedUniverse.UI.Components;
 
 public class DrawGroupedGroupFolder : IDrawFolder
 {

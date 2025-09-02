@@ -1,12 +1,12 @@
 ﻿using Dalamud.Utility;
-using MareSynchronos.API.Data;
-using MareSynchronos.API.Dto.CharaData;
-using MareSynchronos.Utils;
+using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.API.Dto.CharaData;
+using PocketSizedUniverse.Utils;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
 
-namespace MareSynchronos.Services.CharaData.Models;
+namespace PocketSizedUniverse.Services.CharaData.Models;
 
 public sealed record GposeLobbyUserData(UserData UserData)
 {

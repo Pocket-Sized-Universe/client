@@ -11,12 +11,12 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
-using MareSynchronos.API.Dto.CharaData;
-using MareSynchronos.Interop;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.PlayerData.Handlers;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Utils;
+using PocketSizedUniverse.API.Dto.CharaData;
+using PocketSizedUniverse.Interop;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.PlayerData.Handlers;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Utils;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
@@ -24,7 +24,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
-namespace MareSynchronos.Services;
+namespace PocketSizedUniverse.Services;
 
 public class DalamudUtilService : IHostedService, IMediatorSubscriber
 {

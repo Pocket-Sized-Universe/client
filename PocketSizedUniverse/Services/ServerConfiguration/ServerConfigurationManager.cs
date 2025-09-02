@@ -1,9 +1,9 @@
 ﻿using Dalamud.Utility;
-using MareSynchronos.API.Routes;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.MareConfiguration.Models;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.API.Routes;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.MareConfiguration.Models;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.WebAPI;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -12,7 +12,7 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace MareSynchronos.Services.ServerConfiguration;
+namespace PocketSizedUniverse.Services.ServerConfiguration;
 
 public class ServerConfigurationManager
 {

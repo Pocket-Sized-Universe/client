@@ -1,8 +1,8 @@
-﻿using MareSynchronos.API.Data;
+﻿using PocketSizedUniverse.API.Data;
 
-using MareSynchronos.API.Data.Enum;
+using PocketSizedUniverse.API.Data.Enum;
 
-namespace MareSynchronos.PlayerData.Data;
+namespace PocketSizedUniverse.PlayerData.Data;
 
 public class CharacterData
 {

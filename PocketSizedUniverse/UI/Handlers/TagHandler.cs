@@ -1,6 +1,6 @@
 ﻿using MareSynchronos.Services.ServerConfiguration;
 
-namespace MareSynchronos.UI.Handlers;
+namespace PocketSizedUniverse.UI.Handlers;
 
 public class TagHandler
 {

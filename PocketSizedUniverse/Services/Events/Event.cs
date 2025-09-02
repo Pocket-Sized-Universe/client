@@ -1,6 +1,6 @@
-﻿using MareSynchronos.API.Data;
+﻿using PocketSizedUniverse.API.Data;
 
-namespace MareSynchronos.Services.Events;
+namespace PocketSizedUniverse.Services.Events;
 
 public record Event
 {

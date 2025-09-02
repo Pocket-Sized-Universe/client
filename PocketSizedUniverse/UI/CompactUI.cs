@@ -4,21 +4,21 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
-using MareSynchronos.API.Data.Extensions;
-using MareSynchronos.API.Dto.Group;
-using MareSynchronos.Interop.Ipc;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.PlayerData.Handlers;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
-using MareSynchronos.UI.Components;
-using MareSynchronos.UI.Handlers;
-using MareSynchronos.WebAPI;
-using MareSynchronos.WebAPI.Files;
-using MareSynchronos.WebAPI.Files.Models;
-using MareSynchronos.WebAPI.SignalR.Utils;
+using PocketSizedUniverse.API.Data.Extensions;
+using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.Interop.Ipc;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.PlayerData.Handlers;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
+using PocketSizedUniverse.UI.Components;
+using PocketSizedUniverse.UI.Handlers;
+using PocketSizedUniverse.WebAPI;
+using PocketSizedUniverse.WebAPI.Files;
+using PocketSizedUniverse.WebAPI.Files.Models;
+using PocketSizedUniverse.WebAPI.SignalR.Utils;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
@@ -26,7 +26,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Reflection;
 
-namespace MareSynchronos.UI;
+namespace PocketSizedUniverse.UI;
 
 public class CompactUi : WindowMediatorSubscriberBase
 {

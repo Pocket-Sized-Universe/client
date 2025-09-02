@@ -1,8 +1,8 @@
-﻿using MareSynchronos.API.Dto.Group;
-using MareSynchronos.WebAPI.SignalR.Utils;
+﻿using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.WebAPI.SignalR.Utils;
 using Microsoft.AspNetCore.SignalR.Client;
 
-namespace MareSynchronos.WebAPI;
+namespace PocketSizedUniverse.WebAPI;
 
 public partial class ApiController
 {

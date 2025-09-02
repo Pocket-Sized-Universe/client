@@ -1,7 +1,7 @@
 ﻿
 using System.Collections.Immutable;
 
-namespace MareSynchronos.UI.Components;
+namespace PocketSizedUniverse.UI.Components;
 
 public interface IDrawFolder
 {

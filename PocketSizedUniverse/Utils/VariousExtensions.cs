@@ -1,12 +1,12 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
-using MareSynchronos.API.Data;
-using MareSynchronos.API.Data.Enum;
-using MareSynchronos.PlayerData.Handlers;
-using MareSynchronos.PlayerData.Pairs;
+using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.API.Data.Enum;
+using PocketSizedUniverse.PlayerData.Handlers;
+using PocketSizedUniverse.PlayerData.Pairs;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
-namespace MareSynchronos.Utils;
+namespace PocketSizedUniverse.Utils;
 
 public static class VariousExtensions
 {

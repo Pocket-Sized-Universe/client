@@ -1,6 +1,6 @@
 ﻿using MareSynchronos.MareConfiguration.Configurations;
 
-namespace MareSynchronos.MareConfiguration;
+namespace PocketSizedUniverse.MareConfiguration;
 
 public interface IConfigService<out T> : IDisposable where T : IMareConfiguration
 {

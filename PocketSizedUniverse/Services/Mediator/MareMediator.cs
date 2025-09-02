@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
 
-namespace MareSynchronos.Services.Mediator;
+namespace PocketSizedUniverse.Services.Mediator;
 
 public sealed class MareMediator : IHostedService
 {

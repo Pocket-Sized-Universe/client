@@ -1,9 +1,9 @@
 ﻿using MareSynchronos.Services.Mediator;
-using MareSynchronos.Utils;
+using PocketSizedUniverse.Utils;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.Services.Events;
+namespace PocketSizedUniverse.Services.Events;
 
 public class EventAggregator : MediatorSubscriberBase, IHostedService
 {

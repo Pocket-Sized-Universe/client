@@ -3,17 +3,17 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.API.Data.Enum;
-using MareSynchronos.API.Data.Extensions;
-using MareSynchronos.API.Dto.Group;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.API.Data.Enum;
+using PocketSizedUniverse.API.Data.Extensions;
+using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.WebAPI;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 
-namespace MareSynchronos.UI.Components.Popup;
+namespace PocketSizedUniverse.UI.Components.Popup;
 
 public class SyncshellAdminUI : WindowMediatorSubscriberBase
 {

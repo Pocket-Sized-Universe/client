@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace MareSynchronos.MareConfiguration.Configurations;
+namespace PocketSizedUniverse.MareConfiguration.Configurations;
 
 public class XivDataStorageConfig : IMareConfiguration
 {

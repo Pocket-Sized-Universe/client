@@ -1,14 +1,14 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.MareConfiguration.Models;
-using MareSynchronos.Services.Mediator;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.MareConfiguration.Models;
+using PocketSizedUniverse.Services.Mediator;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NotificationType = MareSynchronos.MareConfiguration.Models.NotificationType;
 
-namespace MareSynchronos.Services;
+namespace PocketSizedUniverse.Services;
 
 public class NotificationService : DisposableMediatorSubscriberBase, IHostedService
 {

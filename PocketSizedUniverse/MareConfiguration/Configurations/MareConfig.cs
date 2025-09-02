@@ -1,8 +1,8 @@
 ﻿using MareSynchronos.MareConfiguration.Models;
-using MareSynchronos.UI;
+using PocketSizedUniverse.UI;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.MareConfiguration.Configurations;
+namespace PocketSizedUniverse.MareConfiguration.Configurations;
 
 [Serializable]
 public class MareConfig : IMareConfiguration

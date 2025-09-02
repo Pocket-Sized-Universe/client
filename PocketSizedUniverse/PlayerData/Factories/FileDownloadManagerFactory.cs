@@ -1,9 +1,9 @@
 ﻿using MareSynchronos.FileCache;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.WebAPI.Files;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.WebAPI.Files;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.PlayerData.Factories;
+namespace PocketSizedUniverse.PlayerData.Factories;
 
 public class FileDownloadManagerFactory
 {

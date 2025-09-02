@@ -1,8 +1,8 @@
-﻿using MareSynchronos.API.Data;
-using MareSynchronos.FileCache;
-using MareSynchronos.Services.CharaData.Models;
+﻿using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.FileCache;
+using PocketSizedUniverse.Services.CharaData.Models;
 
-namespace MareSynchronos.Services.CharaData;
+namespace PocketSizedUniverse.Services.CharaData;
 
 public sealed class MareCharaFileDataFactory
 {

@@ -1,6 +1,6 @@
-﻿using MareSynchronos.API.Dto.CharaData;
+﻿using PocketSizedUniverse.API.Dto.CharaData;
 
-namespace MareSynchronos.Services.CharaData.Models;
+namespace PocketSizedUniverse.Services.CharaData.Models;
 
 public sealed record CharaDataMetaInfoExtendedDto : CharaDataMetaInfoDto
 {

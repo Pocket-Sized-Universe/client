@@ -3,15 +3,15 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.API.Data.Extensions;
-using MareSynchronos.API.Dto.Group;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.UI.Handlers;
-using MareSynchronos.WebAPI;
+using PocketSizedUniverse.API.Data.Extensions;
+using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.UI.Handlers;
+using PocketSizedUniverse.WebAPI;
 using System.Collections.Immutable;
 
-namespace MareSynchronos.UI.Components;
+namespace PocketSizedUniverse.UI.Components;
 
 public class DrawFolderGroup : DrawFolderBase
 {

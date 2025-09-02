@@ -1,13 +1,13 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.API.Dto.Group;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
+using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
 
-namespace MareSynchronos.UI.Handlers;
+namespace PocketSizedUniverse.UI.Handlers;
 
 public class IdDisplayHandler
 {

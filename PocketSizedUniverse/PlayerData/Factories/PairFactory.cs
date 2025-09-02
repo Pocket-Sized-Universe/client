@@ -1,10 +1,10 @@
-﻿using MareSynchronos.API.Dto.User;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
+﻿using PocketSizedUniverse.API.Dto.User;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
 using Microsoft.Extensions.Logging;
 
-namespace MareSynchronos.PlayerData.Factories;
+namespace PocketSizedUniverse.PlayerData.Factories;
 
 public class PairFactory
 {

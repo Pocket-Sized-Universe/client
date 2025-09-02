@@ -3,9 +3,9 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using MareSynchronos.Services.CharaData.Models;
+using PocketSizedUniverse.Services.CharaData.Models;
 
-namespace MareSynchronos.UI;
+namespace PocketSizedUniverse.UI;
 
 internal sealed partial class CharaDataHubUi
 {

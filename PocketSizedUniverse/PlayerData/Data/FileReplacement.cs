@@ -1,8 +1,8 @@
-﻿using MareSynchronos.API.Data;
+﻿using PocketSizedUniverse.API.Data;
 
 using System.Text.RegularExpressions;
 
-namespace MareSynchronos.PlayerData.Data;
+namespace PocketSizedUniverse.PlayerData.Data;
 
 public partial class FileReplacement
 {

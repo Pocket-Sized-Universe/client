@@ -1,22 +1,22 @@
 ﻿using Dalamud.Utility;
-using MareSynchronos.API.Data;
-using MareSynchronos.API.Data.Extensions;
-using MareSynchronos.API.Dto;
-using MareSynchronos.API.Dto.User;
-using MareSynchronos.API.SignalR;
-using MareSynchronos.MareConfiguration;
-using MareSynchronos.MareConfiguration.Models;
-using MareSynchronos.PlayerData.Pairs;
-using MareSynchronos.Services;
-using MareSynchronos.Services.Mediator;
-using MareSynchronos.Services.ServerConfiguration;
-using MareSynchronos.WebAPI.SignalR;
-using MareSynchronos.WebAPI.SignalR.Utils;
+using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.API.Data.Extensions;
+using PocketSizedUniverse.API.Dto;
+using PocketSizedUniverse.API.Dto.User;
+using PocketSizedUniverse.API.SignalR;
+using PocketSizedUniverse.MareConfiguration;
+using PocketSizedUniverse.MareConfiguration.Models;
+using PocketSizedUniverse.PlayerData.Pairs;
+using PocketSizedUniverse.Services;
+using PocketSizedUniverse.Services.Mediator;
+using PocketSizedUniverse.Services.ServerConfiguration;
+using PocketSizedUniverse.WebAPI.SignalR;
+using PocketSizedUniverse.WebAPI.SignalR.Utils;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
-namespace MareSynchronos.WebAPI;
+namespace PocketSizedUniverse.WebAPI;
 
 #pragma warning disable MA0040
 public sealed partial class ApiController : DisposableMediatorSubscriberBase, IMareHubClient
