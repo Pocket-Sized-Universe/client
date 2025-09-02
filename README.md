@@ -1,7 +1,7 @@
-# Mare Synchronos Dalamud Plugin
+# Pocket Sized Universe Dalamud Plugin
 
-Available at [This dalamud Repo](https://raw.githubusercontent.com/MareSynchronos/repo/main/plogonmaster.json)
+Available at [This dalamud Repo](https://raw.githubusercontent.com/Pocket-Sized-Universe/repo/main/plogonmaster.json)
 
-# [Mare Synchronos Discord](https://discord.gg/5HVveFefcB)
+# [Pocket Sized Universe Discord](https://discord.gg/mpNdkrTRjW)
 
 Readme TBD
