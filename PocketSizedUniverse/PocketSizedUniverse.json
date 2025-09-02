@@ -3,11 +3,11 @@
   "Name": "Pocket Sized Universe",
   "Punchline": "Let others see you as you see yourself.",
   "Description": "This plugin will synchronize your Penumbra mods and current Glamourer state with other paired clients automatically.",
-  "InternalName": "mareSynchronos",
+  "InternalName": "pocketSizedUniverse",
   "ApplicableVersion": "any",
   "Tags": [
     "customization"
   ],
-  "IconUrl": "https://raw.githubusercontent.com/Pocket-Sized-Universe/client/main/MareSynchronos/images/logo.png",
+  "IconUrl": "https://raw.githubusercontent.com/Pocket-Sized-Universe/client/main/PocketSizedUniverse/images/logo.png",
   "RepoUrl": "https://github.com/Pocket-Sized-Universe/client"
 }
