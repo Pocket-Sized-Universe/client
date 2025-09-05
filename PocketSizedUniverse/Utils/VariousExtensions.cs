@@ -91,7 +91,7 @@ public static class VariousExtensions
             {
                 if (hasNewAndOldFileReplacements)
                 {
-                    bool listsAreEqual = oldData.FileReplacements[objectKind].SequenceEqual(newData.FileReplacements[objectKind], PlayerData.Data.FileReplacementDataComparer.Instance);
+                    bool listsAreEqual = oldData.FileReplacements[objectKind].SequenceEqual(newData.FileReplacements[objectKind]);
                     if (!listsAreEqual || forceApplyMods)
                     {
                         logger.LogDebug("[BASE-{appBase}] Updating {object}/{kind} (FileReplacements not equal) => {change}", applicationBase, cachedPlayer, objectKind, PlayerChanges.ModFiles);
@@ -102,30 +102,22 @@ public static class VariousExtensions
                         }
                         else
                         {
-                            var existingFace = existingFileReplacements.Where(g => g.GamePaths.Any(p => p.Contains("/face/", StringComparison.OrdinalIgnoreCase)))
-                                .OrderBy(g => string.IsNullOrEmpty(g.Hash) ? g.FileSwapPath : g.Hash, StringComparer.OrdinalIgnoreCase).ToList();
-                            var existingHair = existingFileReplacements.Where(g => g.GamePaths.Any(p => p.Contains("/hair/", StringComparison.OrdinalIgnoreCase)))
-                                .OrderBy(g => string.IsNullOrEmpty(g.Hash) ? g.FileSwapPath : g.Hash, StringComparer.OrdinalIgnoreCase).ToList();
-                            var existingTail = existingFileReplacements.Where(g => g.GamePaths.Any(p => p.Contains("/tail/", StringComparison.OrdinalIgnoreCase)))
-                                .OrderBy(g => string.IsNullOrEmpty(g.Hash) ? g.FileSwapPath : g.Hash, StringComparer.OrdinalIgnoreCase).ToList();
-                            var newFace = newFileReplacements.Where(g => g.GamePaths.Any(p => p.Contains("/face/", StringComparison.OrdinalIgnoreCase)))
-                                .OrderBy(g => string.IsNullOrEmpty(g.Hash) ? g.FileSwapPath : g.Hash, StringComparer.OrdinalIgnoreCase).ToList();
-                            var newHair = newFileReplacements.Where(g => g.GamePaths.Any(p => p.Contains("/hair/", StringComparison.OrdinalIgnoreCase)))
-                                .OrderBy(g => string.IsNullOrEmpty(g.Hash) ? g.FileSwapPath : g.Hash, StringComparer.OrdinalIgnoreCase).ToList();
-                            var newTail = newFileReplacements.Where(g => g.GamePaths.Any(p => p.Contains("/tail/", StringComparison.OrdinalIgnoreCase)))
-                                .OrderBy(g => string.IsNullOrEmpty(g.Hash) ? g.FileSwapPath : g.Hash, StringComparer.OrdinalIgnoreCase).ToList();
-                            var existingTransients = existingFileReplacements.Where(g => g.GamePaths.Any(g => !g.EndsWith("mdl") && !g.EndsWith("tex") && !g.EndsWith("mtrl")))
-                                .OrderBy(g => string.IsNullOrEmpty(g.Hash) ? g.FileSwapPath : g.Hash, StringComparer.OrdinalIgnoreCase).ToList();
-                            var newTransients = newFileReplacements.Where(g => g.GamePaths.Any(g => !g.EndsWith("mdl") && !g.EndsWith("tex") && !g.EndsWith("mtrl")))
-                                .OrderBy(g => string.IsNullOrEmpty(g.Hash) ? g.FileSwapPath : g.Hash, StringComparer.OrdinalIgnoreCase).ToList();
+                            var existingFace = existingFileReplacements.Where(g => g.GamePath.Contains("/face/", StringComparison.OrdinalIgnoreCase)).ToList();
+                            var existingHair = existingFileReplacements.Where(g => g.GamePath.Contains("/hair/", StringComparison.OrdinalIgnoreCase)).ToList();
+                            var existingTail = existingFileReplacements.Where(g => g.GamePath.Contains("/tail/", StringComparison.OrdinalIgnoreCase)).ToList();
+                            var newFace = newFileReplacements.Where(g => g.GamePath.Contains("/face/", StringComparison.OrdinalIgnoreCase)).ToList();
+                            var newHair = newFileReplacements.Where(g => g.GamePath.Contains("/hair/", StringComparison.OrdinalIgnoreCase)).ToList();
+                            var newTail = newFileReplacements.Where(g => g.GamePath.Contains("/tail/", StringComparison.OrdinalIgnoreCase)).ToList();
+                            var existingTransients = existingFileReplacements.Where(g => g.GamePath.EndsWith("mdl", StringComparison.Ordinal) && !g.GamePath.EndsWith("tex", StringComparison.Ordinal) && !g.GamePath.EndsWith("mtrl", StringComparison.Ordinal)).ToList();
+                            var newTransients = newFileReplacements.Where(g => g.GamePath.EndsWith("mdl", StringComparison.Ordinal) && !g.GamePath.EndsWith("tex", StringComparison.Ordinal) && !g.GamePath.EndsWith("mtrl", StringComparison.Ordinal)).ToList();
 
                             logger.LogTrace("[BASE-{appbase}] ExistingFace: {of}, NewFace: {fc}; ExistingHair: {eh}, NewHair: {nh}; ExistingTail: {et}, NewTail: {nt}; ExistingTransient: {etr}, NewTransient: {ntr}", applicationBase,
                                 existingFace.Count, newFace.Count, existingHair.Count, newHair.Count, existingTail.Count, newTail.Count, existingTransients.Count, newTransients.Count);
 
-                            var differentFace = !existingFace.SequenceEqual(newFace, PlayerData.Data.FileReplacementDataComparer.Instance);
-                            var differentHair = !existingHair.SequenceEqual(newHair, PlayerData.Data.FileReplacementDataComparer.Instance);
-                            var differentTail = !existingTail.SequenceEqual(newTail, PlayerData.Data.FileReplacementDataComparer.Instance);
-                            var differenTransients = !existingTransients.SequenceEqual(newTransients, PlayerData.Data.FileReplacementDataComparer.Instance);
+                            var differentFace = !existingFace.SequenceEqual(newFace);
+                            var differentHair = !existingHair.SequenceEqual(newHair);
+                            var differentTail = !existingTail.SequenceEqual(newTail);
+                            var differenTransients = !existingTransients.SequenceEqual(newTransients);
                             if (differentFace || differentHair || differentTail || differenTransients)
                             {
                                 logger.LogDebug("[BASE-{appbase}] Different Subparts: Face: {face}, Hair: {hair}, Tail: {tail}, Transients: {transients} => {change}", applicationBase,

@@ -1,20 +1,19 @@
 ﻿using PocketSizedUniverse.API.Data;
-using PocketSizedUniverse.FileCache;
 using PocketSizedUniverse.Services.CharaData.Models;
 
 namespace PocketSizedUniverse.Services.CharaData;
 
 public sealed class MareCharaFileDataFactory
 {
-    private readonly FileCacheManager _fileCacheManager;
+    private readonly BitTorrentService _bitTorrentService;
 
-    public MareCharaFileDataFactory(FileCacheManager fileCacheManager)
+    public MareCharaFileDataFactory(BitTorrentService fileCacheManager)
     {
-        _fileCacheManager = fileCacheManager;
+        _bitTorrentService = fileCacheManager;
     }
 
     public MareCharaFileData Create(string description, CharacterData characterCacheDto)
     {
-        return new MareCharaFileData(_fileCacheManager, description, characterCacheDto);
+        return new MareCharaFileData(_bitTorrentService, description, characterCacheDto);
     }
 }

@@ -1,6 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using PocketSizedUniverse.API.Data.Enum;
-using PocketSizedUniverse.FileCache;
 using PocketSizedUniverse.Interop.Ipc;
 using PocketSizedUniverse.MareConfiguration.Models;
 using PocketSizedUniverse.PlayerData.Data;
@@ -8,6 +7,9 @@ using PocketSizedUniverse.PlayerData.Handlers;
 using PocketSizedUniverse.Services;
 using PocketSizedUniverse.Services.Mediator;
 using Microsoft.Extensions.Logging;
+using PocketSizedUniverse.API.Dto.CharaData;
+using PocketSizedUniverse.Services.CharaData.Models;
+using PocketSizedUniverse.WebAPI;
 using CharacterData = PocketSizedUniverse.PlayerData.Data.CharacterData;
 
 namespace PocketSizedUniverse.PlayerData.Factories;
@@ -15,26 +17,26 @@ namespace PocketSizedUniverse.PlayerData.Factories;
 public class PlayerDataFactory
 {
     private readonly DalamudUtilService _dalamudUtil;
-    private readonly FileCacheManager _fileCacheManager;
+    private readonly BitTorrentService _torrentService;
     private readonly IpcManager _ipcManager;
     private readonly ILogger<PlayerDataFactory> _logger;
     private readonly PerformanceCollectorService _performanceCollector;
     private readonly XivDataAnalyzer _modelAnalyzer;
     private readonly MareMediator _mareMediator;
-    private readonly TransientResourceManager _transientResourceManager;
+    private readonly ApiController _apiController;
 
     public PlayerDataFactory(ILogger<PlayerDataFactory> logger, DalamudUtilService dalamudUtil, IpcManager ipcManager,
-        TransientResourceManager transientResourceManager, FileCacheManager fileReplacementFactory,
-        PerformanceCollectorService performanceCollector, XivDataAnalyzer modelAnalyzer, MareMediator mareMediator)
+        PerformanceCollectorService performanceCollector, XivDataAnalyzer modelAnalyzer, MareMediator mareMediator,
+        BitTorrentService torrentService, ApiController apiController)
     {
         _logger = logger;
         _dalamudUtil = dalamudUtil;
+        _torrentService = torrentService;
         _ipcManager = ipcManager;
-        _transientResourceManager = transientResourceManager;
-        _fileCacheManager = fileReplacementFactory;
         _performanceCollector = performanceCollector;
         _modelAnalyzer = modelAnalyzer;
         _mareMediator = mareMediator;
+        _apiController = apiController;
         _logger.LogTrace("Creating {this}", nameof(PlayerDataFactory));
     }
 
@@ -128,7 +130,6 @@ public class PlayerDataFactory
 
         DateTime start = DateTime.UtcNow;
 
-        // penumbra call, it's currently broken
         Dictionary<string, HashSet<string>>? resolvedPaths;
 
         resolvedPaths = (await _ipcManager.Penumbra.GetCharacterData(_logger, playerRelatedObject).ConfigureAwait(false));
@@ -136,34 +137,38 @@ public class PlayerDataFactory
 
         ct.ThrowIfCancellationRequested();
 
-        fragment.FileReplacements =
-                new HashSet<FileReplacement>(resolvedPaths.Select(c => new FileReplacement([.. c.Value], c.Key)), FileReplacementComparer.Instance)
-                .Where(p => p.HasFileReplacement).ToHashSet();
-        fragment.FileReplacements.RemoveWhere(c => c.GamePaths.Any(g => !CacheMonitor.AllowedFileExtensions.Any(e => g.EndsWith(e, StringComparison.OrdinalIgnoreCase))));
+        foreach (var path in resolvedPaths)
+        {
+            foreach (var file in path.Value)
+            {
+                if (File.Exists(path.Key))
+                {
+                    var dto = await _torrentService.CreateAndSeedNewTorrent(path.Key).ConfigureAwait(false);
+                    await _torrentService.EnsureTorrentFileAndStart(dto).ConfigureAwait(false);
+                    TorrentFileEntry torrentFile = new(dto.Hash, file, dto);
+                    fragment.FileSwaps.Add(torrentFile);
+                }
+                else
+                {
+                    FileRedirectEntry redirectEntry = new FileRedirectEntry(path.Key, file);
+                    fragment.FileReplacements.Add(redirectEntry);
+                }
+            }
+        }
 
         ct.ThrowIfCancellationRequested();
 
         _logger.LogDebug("== Static Replacements ==");
-        foreach (var replacement in fragment.FileReplacements.Where(i => i.HasFileReplacement).OrderBy(i => i.GamePaths.First(), StringComparer.OrdinalIgnoreCase))
+        foreach (var replacement in fragment.FileReplacements.OrderBy(i => i.GamePath, StringComparer.OrdinalIgnoreCase))
         {
             _logger.LogDebug("=> {repl}", replacement);
             ct.ThrowIfCancellationRequested();
         }
 
-        await _transientResourceManager.WaitForRecording(ct).ConfigureAwait(false);
-
         // if it's pet then it's summoner, if it's summoner we actually want to keep all filereplacements alive at all times
         // or we get into redraw city for every change and nothing works properly
         if (objectKind == ObjectKind.Pet)
         {
-            foreach (var item in fragment.FileReplacements.Where(i => i.HasFileReplacement).SelectMany(p => p.GamePaths))
-            {
-                if (_transientResourceManager.AddTransientResource(objectKind, item))
-                {
-                    _logger.LogDebug("Marking static {item} for Pet as transient", item);
-                }
-            }
-
             _logger.LogTrace("Clearing {count} Static Replacements for Pet", fragment.FileReplacements.Count);
             fragment.FileReplacements.Clear();
         }
@@ -172,27 +177,7 @@ public class PlayerDataFactory
 
         _logger.LogDebug("Handling transient update for {obj}", playerRelatedObject);
 
-        // remove all potentially gathered paths from the transient resource manager that are resolved through static resolving
-        _transientResourceManager.ClearTransientPaths(objectKind, fragment.FileReplacements.SelectMany(c => c.GamePaths).ToList());
-
-        // get all remaining paths and resolve them
-        var transientPaths = ManageSemiTransientData(objectKind);
-        var resolvedTransientPaths = await GetFileReplacementsFromPaths(transientPaths, new HashSet<string>(StringComparer.Ordinal)).ConfigureAwait(false);
-
-        _logger.LogDebug("== Transient Replacements ==");
-        foreach (var replacement in resolvedTransientPaths.Select(c => new FileReplacement([.. c.Value], c.Key)).OrderBy(f => f.ResolvedPath, StringComparer.Ordinal))
-        {
-            _logger.LogDebug("=> {repl}", replacement);
-            fragment.FileReplacements.Add(replacement);
-        }
-
-        // clean up all semi transient resources that don't have any file replacement (aka null resolve)
-        _transientResourceManager.CleanUpSemiTransientResources(objectKind, [.. fragment.FileReplacements]);
-
         ct.ThrowIfCancellationRequested();
-
-        // make sure we only return data that actually has file replacements
-        fragment.FileReplacements = new HashSet<FileReplacement>(fragment.FileReplacements.Where(v => v.HasFileReplacement).OrderBy(v => v.ResolvedPath, StringComparer.Ordinal), FileReplacementComparer.Instance);
 
         // gather up data from ipc
         Task<string> getHeelsOffset = _ipcManager.Heels.GetOffsetAsync();
@@ -216,27 +201,13 @@ public class PlayerDataFactory
             playerFragment!.HeelsData = await getHeelsOffset.ConfigureAwait(false);
             _logger.LogDebug("Heels is now: {heels}", playerFragment!.HeelsData);
 
-            playerFragment!.MoodlesData = await _ipcManager.Moodles.GetStatusAsync(playerRelatedObject.Address).ConfigureAwait(false) ?? string.Empty;
+            playerFragment!.MoodlesData =
+                await _ipcManager.Moodles.GetStatusAsync(playerRelatedObject.Address).ConfigureAwait(false) ??
+                string.Empty;
             _logger.LogDebug("Moodles is now: {moodles}", playerFragment!.MoodlesData);
 
             playerFragment!.PetNamesData = _ipcManager.PetNames.GetLocalNames();
             _logger.LogDebug("Pet Nicknames is now: {petnames}", playerFragment!.PetNamesData);
-        }
-
-        ct.ThrowIfCancellationRequested();
-
-        var toCompute = fragment.FileReplacements.Where(f => !f.IsFileSwap).ToArray();
-        _logger.LogDebug("Getting Hashes for {amount} Files", toCompute.Length);
-        var computedPaths = _fileCacheManager.GetFileCachesByPaths(toCompute.Select(c => c.ResolvedPath).ToArray());
-        foreach (var file in toCompute)
-        {
-            ct.ThrowIfCancellationRequested();
-            file.Hash = computedPaths[file.ResolvedPath]?.Hash ?? string.Empty;
-        }
-        var removed = fragment.FileReplacements.RemoveWhere(f => !f.IsFileSwap && string.IsNullOrEmpty(f.Hash));
-        if (removed > 0)
-        {
-            _logger.LogDebug("Removed {amount} of invalid files", removed);
         }
 
         ct.ThrowIfCancellationRequested();
@@ -275,9 +246,11 @@ public class PlayerDataFactory
         if (boneIndices.All(u => u.Value.Count == 0)) return;
 
         int noValidationFailed = 0;
-        foreach (var file in fragment.FileReplacements.Where(f => !f.IsFileSwap && f.GamePaths.First().EndsWith("pap", StringComparison.OrdinalIgnoreCase)).ToList())
+        foreach (var file in fragment.FileSwaps.Where(f => f.GamePath.EndsWith("pap", StringComparison.OrdinalIgnoreCase)).ToList())
         {
             ct.ThrowIfCancellationRequested();
+            var truePath = await _torrentService.GetFilePathForHash(file.Hash).ConfigureAwait(false);
+            if (truePath == null) continue;
 
             var skeletonIndices = await _dalamudUtil.RunOnFrameworkThread(() => _modelAnalyzer.GetBoneIndicesFromPap(file.Hash)).ConfigureAwait(false);
             bool validationFailed = false;
@@ -286,18 +259,18 @@ public class PlayerDataFactory
                 // 105 is the maximum vanilla skellington spoopy bone index
                 if (skeletonIndices.All(k => k.Value.Max() <= 105))
                 {
-                    _logger.LogTrace("All indices of {path} are <= 105, ignoring", file.ResolvedPath);
+                    _logger.LogTrace("All indices of {path} are <= 105, ignoring", truePath);
                     continue;
                 }
 
-                _logger.LogDebug("Verifying bone indices for {path}, found {x} skeletons", file.ResolvedPath, skeletonIndices.Count);
+                _logger.LogDebug("Verifying bone indices for {path}, found {x} skeletons", truePath, skeletonIndices.Count);
 
                 foreach (var boneCount in skeletonIndices.Select(k => k).ToList())
                 {
                     if (boneCount.Value.Max() > boneIndices.SelectMany(b => b.Value).Max())
                     {
                         _logger.LogWarning("Found more bone indices on the animation {path} skeleton {skl} (max indice {idx}) than on any player related skeleton (max indice {idx2})",
-                            file.ResolvedPath, boneCount.Key, boneCount.Value.Max(), boneIndices.SelectMany(b => b.Value).Max());
+                            truePath, boneCount.Key, boneCount.Value.Max(), boneIndices.SelectMany(b => b.Value).Max());
                         validationFailed = true;
                         break;
                     }
@@ -307,12 +280,8 @@ public class PlayerDataFactory
             if (validationFailed)
             {
                 noValidationFailed++;
-                _logger.LogDebug("Removing {file} from sent file replacements and transient data", file.ResolvedPath);
-                fragment.FileReplacements.Remove(file);
-                foreach (var gamePath in file.GamePaths)
-                {
-                    _transientResourceManager.RemoveTransientResource(ObjectKind.Player, gamePath);
-                }
+                _logger.LogDebug("Removing {file} from sent file replacements and transient data", truePath);
+                fragment.FileSwaps.Remove(file);
             }
 
         }
@@ -359,18 +328,5 @@ public class PlayerDataFactory
         }
 
         return resolvedPaths.ToDictionary(k => k.Key, k => k.Value.ToArray(), StringComparer.OrdinalIgnoreCase).AsReadOnly();
-    }
-
-    private HashSet<string> ManageSemiTransientData(ObjectKind objectKind)
-    {
-        _transientResourceManager.PersistTransientResources(objectKind);
-
-        HashSet<string> pathsToResolve = new(StringComparer.Ordinal);
-        foreach (var path in _transientResourceManager.GetSemiTransientResources(objectKind).Where(path => !string.IsNullOrEmpty(path)))
-        {
-            pathsToResolve.Add(path);
-        }
-
-        return pathsToResolve;
     }
 }

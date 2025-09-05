@@ -21,12 +21,11 @@ namespace PocketSizedUniverse.WebAPI;
 #pragma warning disable MA0040
 public sealed partial class ApiController : DisposableMediatorSubscriberBase, IMareHubClient
 {
-    public const string MainServer = "Lunae Crescere Incipientis (Official Central Server)";
-    public const string MainServiceUri = "wss://maresynchronos.com";
+    public const string MainServer = "Resonance Cascade (Official PSU Server)";
+    public const string MainServiceUri = "ws://192.168.8.144:6000";
 
     private readonly DalamudUtilService _dalamudUtil;
     private readonly HubFactory _hubFactory;
-    private readonly PairManager _pairManager;
     private readonly ServerConfigurationManager _serverManager;
     private readonly TokenProvider _tokenProvider;
     private readonly MareConfigService _mareConfigService;
@@ -41,12 +40,11 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
     private CensusUpdateMessage? _lastCensus;
 
     public ApiController(ILogger<ApiController> logger, HubFactory hubFactory, DalamudUtilService dalamudUtil,
-        PairManager pairManager, ServerConfigurationManager serverManager, MareMediator mediator,
+        ServerConfigurationManager serverManager, MareMediator mediator,
         TokenProvider tokenProvider, MareConfigService mareConfigService) : base(logger, mediator)
     {
         _hubFactory = hubFactory;
         _dalamudUtil = dalamudUtil;
-        _pairManager = pairManager;
         _serverManager = serverManager;
         _tokenProvider = tokenProvider;
         _mareConfigService = mareConfigService;
@@ -332,7 +330,10 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         cts.CancelAfter(TimeSpan.FromSeconds(5));
         _ = Task.Run(async () =>
         {
-            var pair = _pairManager.GetOnlineUserPairs().Single(p => p.UserPair != null && p.UserData == userData);
+            List<Pair> onlineUserPairs = [];
+            Mediator.Publish(new GetOnlineUserPairsRequestMessage(pairs => onlineUserPairs = pairs));
+            
+            var pair = onlineUserPairs.Single(p => p.UserPair != null && p.UserData == userData);
             var perm = pair.UserPair!.OwnPermissions;
             perm.SetPaused(paused: true);
             await UserSetPairPermissions(new UserPermissionsDto(userData, perm)).ConfigureAwait(false);
@@ -351,7 +352,10 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
 
     public async Task PauseAsync(UserData userData)
     {
-        var pair = _pairManager.GetOnlineUserPairs().Single(p => p.UserPair != null && p.UserData == userData);
+        List<Pair> onlineUserPairs = [];
+        Mediator.Publish(new GetOnlineUserPairsRequestMessage(pairs => onlineUserPairs = pairs));
+        
+        var pair = onlineUserPairs.Single(p => p.UserPair != null && p.UserData == userData);
         var perm = pair.UserPair!.OwnPermissions;
         perm.SetPaused(paused: true);
         await UserSetPairPermissions(new UserPermissionsDto(userData, perm)).ConfigureAwait(false);
@@ -462,13 +466,13 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         foreach (var entry in await GroupsGetAll().ConfigureAwait(false))
         {
             Logger.LogDebug("Group: {entry}", entry);
-            _pairManager.AddGroup(entry);
+            Mediator.Publish(new AddGroupMessage(entry));
         }
 
         foreach (var userPair in await UserGetPairedClients().ConfigureAwait(false))
         {
             Logger.LogDebug("Individual Pair: {userPair}", userPair);
-            _pairManager.AddUserPair(userPair);
+            Mediator.Publish(new AddUserPairMessage(userPair));
         }
     }
 
@@ -485,7 +489,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
         foreach (var entry in await UserGetOnlinePairs(dto).ConfigureAwait(false))
         {
             Logger.LogDebug("Pair online: {pair}", entry);
-            _pairManager.MarkPairOnline(entry, sendNotif: false);
+            Mediator.Publish(new MarkPairOnlineMessage(entry, SendNotif: false));
         }
     }
 

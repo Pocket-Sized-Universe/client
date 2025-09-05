@@ -1,4 +1,5 @@
-﻿using PocketSizedUniverse.Services.Mediator;
+﻿using Dalamud.Plugin;
+using PocketSizedUniverse.Services.Mediator;
 using PocketSizedUniverse.Utils;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,7 +19,7 @@ public class EventAggregator : MediatorSubscriberBase, IHostedService
     private string CurrentLogName => $"{DateTime.Now:yyyy-MM-dd}-events.log";
     private DateTime _currentTime;
 
-    public EventAggregator(string configDirectory, ILogger<EventAggregator> logger, MareMediator mareMediator) : base(logger, mareMediator)
+    public EventAggregator(IDalamudPluginInterface pluginInterface, ILogger<EventAggregator> logger, MareMediator mareMediator) : base(logger, mareMediator)
     {
         Mediator.Subscribe<EventMessage>(this, (msg) =>
         {
@@ -38,7 +39,7 @@ public class EventAggregator : MediatorSubscriberBase, IHostedService
         });
 
         EventList = CreateEventLazy();
-        _configDirectory = configDirectory;
+        _configDirectory = pluginInterface.GetPluginConfigDirectory();
         _logger = logger;
         _currentTime = DateTime.Now - TimeSpan.FromDays(1);
     }

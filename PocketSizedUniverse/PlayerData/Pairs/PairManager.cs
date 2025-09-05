@@ -34,6 +34,28 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         _dalamudContextMenu = dalamudContextMenu;
         Mediator.Subscribe<DisconnectedMessage>(this, (_) => ClearPairs());
         Mediator.Subscribe<CutsceneEndMessage>(this, (_) => ReapplyPairData());
+        
+        // Handle messages from ApiController
+        Mediator.Subscribe<AddGroupMessage>(this, (msg) => AddGroup(msg.GroupInfo));
+        Mediator.Subscribe<AddUserPairMessage>(this, (msg) => AddUserPair(msg.UserPair));
+        Mediator.Subscribe<AddUserPairFromDtoMessage>(this, (msg) => AddUserPair(msg.UserPair, msg.AddToLastAdded));
+        Mediator.Subscribe<AddGroupPairMessage>(this, (msg) => AddGroupPair(msg.GroupPair));
+        Mediator.Subscribe<MarkPairOnlineMessage>(this, (msg) => MarkPairOnline(msg.OnlineUser, msg.SendNotif));
+        Mediator.Subscribe<MarkPairOfflineMessage>(this, (msg) => MarkPairOffline(msg.User));
+        Mediator.Subscribe<ReceiveCharaDataMessage>(this, (msg) => ReceiveCharaData(msg.CharaData));
+        Mediator.Subscribe<ReceiveUploadStatusMessage>(this, (msg) => ReceiveUploadStatus(msg.User));
+        Mediator.Subscribe<RemoveUserPairMessage>(this, (msg) => RemoveUserPair(msg.User));
+        Mediator.Subscribe<RemoveGroupMessage>(this, (msg) => RemoveGroup(msg.Group));
+        Mediator.Subscribe<RemoveGroupPairMessage>(this, (msg) => RemoveGroupPair(msg.GroupPair));
+        Mediator.Subscribe<UpdatePairPermissionsMessage>(this, (msg) => UpdatePairPermissions(msg.Permissions));
+        Mediator.Subscribe<UpdateSelfPairPermissionsMessage>(this, (msg) => UpdateSelfPairPermissions(msg.Permissions));
+        Mediator.Subscribe<UpdateIndividualPairStatusMessage>(this, (msg) => UpdateIndividualPairStatus(msg.Status));
+        Mediator.Subscribe<SetGroupInfoMessage>(this, (msg) => SetGroupInfo(msg.GroupInfo));
+        Mediator.Subscribe<SetGroupPermissionsMessage>(this, (msg) => SetGroupPermissions(msg.Permissions));
+        Mediator.Subscribe<SetGroupStatusInfoMessage>(this, (msg) => SetGroupStatusInfo(msg.UserInfo));
+        Mediator.Subscribe<SetGroupPairStatusInfoMessage>(this, (msg) => SetGroupPairStatusInfo(msg.UserInfo));
+        Mediator.Subscribe<UpdateGroupPairPermissionsMessage>(this, (msg) => UpdateGroupPairPermissions(msg.Permissions));
+        Mediator.Subscribe<GetOnlineUserPairsRequestMessage>(this, (msg) => msg.Callback(GetOnlineUserPairs()));
         _directPairsInternal = DirectPairsLazy();
         _groupPairsInternal = GroupPairsLazy();
         _pairsWithGroupsInternal = PairsWithGroupsLazy();
@@ -122,7 +144,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
 
     public int GetVisibleUserCount() => _allClientPairs.Count(p => p.Value.IsVisible);
 
-    public List<UserData> GetVisibleUsers() => [.. _allClientPairs.Where(p => p.Value.IsVisible).Select(p => p.Key)];
+    public List<UserData> GetVisibleUsers() => [.. _allClientPairs.Where(p => p.Value.IsVisible || p.Value.IsOnline).Select(p => p.Key)];
 
     public void MarkPairOffline(UserData user)
     {

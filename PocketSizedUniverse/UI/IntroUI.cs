@@ -3,7 +3,6 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
-using PocketSizedUniverse.FileCache;
 using PocketSizedUniverse.Localization;
 using PocketSizedUniverse.MareConfiguration;
 using PocketSizedUniverse.MareConfiguration.Models;
@@ -19,7 +18,6 @@ namespace PocketSizedUniverse.UI;
 public partial class IntroUi : WindowMediatorSubscriberBase
 {
     private readonly MareConfigService _configService;
-    private readonly CacheMonitor _cacheMonitor;
     private readonly Dictionary<string, string> _languages = new(StringComparer.Ordinal) { { "English", "en" }, { "Deutsch", "de" }, { "Français", "fr" } };
     private readonly ServerConfigurationManager _serverConfigurationManager;
     private readonly DalamudUtilService _dalamudUtilService;
@@ -34,12 +32,11 @@ public partial class IntroUi : WindowMediatorSubscriberBase
     private bool _useLegacyLogin = false;
 
     public IntroUi(ILogger<IntroUi> logger, UiSharedService uiShared, MareConfigService configService,
-        CacheMonitor fileCacheManager, ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator,
+        ServerConfigurationManager serverConfigurationManager, MareMediator mareMediator,
         PerformanceCollectorService performanceCollectorService, DalamudUtilService dalamudUtilService) : base(logger, mareMediator, "Pocket Sized Universe Setup", performanceCollectorService)
     {
         _uiShared = uiShared;
         _configService = configService;
-        _cacheMonitor = fileCacheManager;
         _serverConfigurationManager = serverConfigurationManager;
         _dalamudUtilService = dalamudUtilService;
         IsOpen = false;
@@ -177,17 +174,6 @@ public partial class IntroUi : WindowMediatorSubscriberBase
                 _uiShared.DrawCacheDirectorySetting();
             }
 
-            if (!_cacheMonitor.IsScanRunning && !string.IsNullOrEmpty(_configService.Current.CacheFolder) && _uiShared.HasValidPenumbraModPath && Directory.Exists(_configService.Current.CacheFolder))
-            {
-                if (ImGui.Button("Start Scan##startScan"))
-                {
-                    _cacheMonitor.InvokeScan();
-                }
-            }
-            else
-            {
-                _uiShared.DrawFileScanState();
-            }
             if (!_dalamudUtilService.IsWine)
             {
                 var useFileCompactor = _configService.Current.UseCompactor;

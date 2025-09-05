@@ -121,7 +121,7 @@ public partial class ApiController
         {
             sb.AppendLine($"GlamourerData for {item.Key}: {!string.IsNullOrEmpty(item.Value)}");
         }
-        Logger.LogDebug("Chara data contained: {nl} {data}", Environment.NewLine, sb.ToString());
+        Logger.LogInformation("Chara data contained: {nl} {data}", Environment.NewLine, sb.ToString());
 
         CensusDataDto? censusDto = null;
         if (_serverManager.SendCensusData && _lastCensus != null)

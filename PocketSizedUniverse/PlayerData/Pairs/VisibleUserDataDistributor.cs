@@ -1,9 +1,8 @@
-﻿using PocketSizedUniverse.API.Data;
+using PocketSizedUniverse.API.Data;
 using PocketSizedUniverse.Services;
 using PocketSizedUniverse.Services.Mediator;
 using PocketSizedUniverse.Utils;
 using PocketSizedUniverse.WebAPI;
-using PocketSizedUniverse.WebAPI.Files;
 using Microsoft.Extensions.Logging;
 
 namespace PocketSizedUniverse.PlayerData.Pairs;
@@ -12,7 +11,7 @@ public class VisibleUserDataDistributor : DisposableMediatorSubscriberBase
 {
     private readonly ApiController _apiController;
     private readonly DalamudUtilService _dalamudUtil;
-    private readonly FileUploadManager _fileTransferManager;
+    private readonly BitTorrentService _torrentService;
     private readonly PairManager _pairManager;
     private CharacterData? _lastCreatedData;
     private CharacterData? _uploadingCharacterData = null;
@@ -23,26 +22,31 @@ public class VisibleUserDataDistributor : DisposableMediatorSubscriberBase
     private readonly CancellationTokenSource _runtimeCts = new();
 
 
-    public VisibleUserDataDistributor(ILogger<VisibleUserDataDistributor> logger, ApiController apiController, DalamudUtilService dalamudUtil,
-        PairManager pairManager, MareMediator mediator, FileUploadManager fileTransferManager) : base(logger, mediator)
+    public VisibleUserDataDistributor(ILogger<VisibleUserDataDistributor> logger, ApiController apiController,
+        DalamudUtilService dalamudUtil,
+        PairManager pairManager, MareMediator mediator, BitTorrentService torrentService) : base(logger, mediator)
     {
         _apiController = apiController;
         _dalamudUtil = dalamudUtil;
         _pairManager = pairManager;
-        _fileTransferManager = fileTransferManager;
+        _torrentService = torrentService;
         Mediator.Subscribe<DelayedFrameworkUpdateMessage>(this, (_) => FrameworkOnUpdate());
         Mediator.Subscribe<CharacterDataCreatedMessage>(this, (msg) =>
         {
             var newData = msg.CharacterData;
-            if (_lastCreatedData == null || (!string.Equals(newData.DataHash.Value, _lastCreatedData.DataHash.Value, StringComparison.Ordinal)))
+            Logger.LogInformation("Received CharacterDataCreatedMessage with hash {hash}, FileReplacements: {count}",
+                newData.DataHash.Value, newData.FileReplacements.Sum(kvp => kvp.Value.Count));
+
+            if (_lastCreatedData == null || (!string.Equals(newData.DataHash.Value, _lastCreatedData.DataHash.Value,
+                    StringComparison.Ordinal)))
             {
                 _lastCreatedData = newData;
-                Logger.LogTrace("Storing new data hash {hash}", newData.DataHash.Value);
+                Logger.LogInformation("Storing new data hash {hash}, triggering upload", newData.DataHash.Value);
                 PushToAllVisibleUsers(forced: true);
             }
             else
             {
-                Logger.LogTrace("Data hash {hash} equal to stored data", newData.DataHash.Value);
+                Logger.LogDebug("Data hash {hash} equal to stored data, no upload needed", newData.DataHash.Value);
             }
         });
 
@@ -63,15 +67,24 @@ public class VisibleUserDataDistributor : DisposableMediatorSubscriberBase
 
     private void PushToAllVisibleUsers(bool forced = false)
     {
-        foreach (var user in _pairManager.GetVisibleUsers())
+        var visibleUsers = _pairManager.GetVisibleUsers();
+        Logger.LogInformation("PushToAllVisibleUsers called, found {count} visible users", visibleUsers.Count());
+
+        foreach (var user in visibleUsers)
         {
             _usersToPushDataTo.Add(user);
+            Logger.LogDebug("Added visible user {user} to push queue", user.AliasOrUID);
         }
 
         if (_usersToPushDataTo.Count > 0)
         {
-            Logger.LogDebug("Pushing data {hash} for {count} visible players", _lastCreatedData?.DataHash.Value ?? "UNKNOWN", _usersToPushDataTo.Count);
+            Logger.LogInformation("Pushing data {hash} for {count} visible players",
+                _lastCreatedData?.DataHash.Value ?? "UNKNOWN", _usersToPushDataTo.Count);
             PushCharacterData(forced);
+        }
+        else
+        {
+            Logger.LogWarning("No visible users found, cannot trigger BitTorrent upload");
         }
     }
 
@@ -92,6 +105,7 @@ public class VisibleUserDataDistributor : DisposableMediatorSubscriberBase
         {
             _usersToPushDataTo.Add(user);
         }
+
         PushCharacterData();
     }
 
@@ -101,31 +115,20 @@ public class VisibleUserDataDistributor : DisposableMediatorSubscriberBase
 
         _ = Task.Run(async () =>
         {
-            forced |= _uploadingCharacterData?.DataHash != _lastCreatedData.DataHash;
-
-            if (_fileUploadTask == null || (_fileUploadTask?.IsCompleted ?? false) || forced)
+            _uploadingCharacterData = _lastCreatedData.DeepClone();
+            await _pushDataSemaphore.WaitAsync(_runtimeCts.Token).ConfigureAwait(false);
+            try
             {
-                _uploadingCharacterData = _lastCreatedData.DeepClone();
-                Logger.LogDebug("Starting UploadTask for {hash}, Reason: TaskIsNull: {task}, TaskIsCompleted: {taskCpl}, Forced: {frc}",
-                    _lastCreatedData.DataHash, _fileUploadTask == null, _fileUploadTask?.IsCompleted ?? false, forced);
-                _fileUploadTask = _fileTransferManager.UploadFiles(_uploadingCharacterData, [.. _usersToPushDataTo]);
+                if (_usersToPushDataTo.Count == 0) return;
+                List<UserData> usersToSend = [.. _usersToPushDataTo];
+                Logger.LogDebug("Pushing {data} to {users}", _uploadingCharacterData.DataHash,
+                    string.Join(", ", usersToSend.Select(k => k.AliasOrUID)));
+                _usersToPushDataTo.Clear();
+                await _apiController.PushCharacterData(_uploadingCharacterData, usersToSend).ConfigureAwait(false);
             }
-
-            if (_fileUploadTask != null)
+            finally
             {
-                var dataToSend = await _fileUploadTask.ConfigureAwait(false);
-                await _pushDataSemaphore.WaitAsync(_runtimeCts.Token).ConfigureAwait(false);
-                try
-                {
-                    if (_usersToPushDataTo.Count == 0) return;
-                    Logger.LogDebug("Pushing {data} to {users}", dataToSend.DataHash, string.Join(", ", _usersToPushDataTo.Select(k => k.AliasOrUID)));
-                    await _apiController.PushCharacterData(dataToSend, [.. _usersToPushDataTo]).ConfigureAwait(false);
-                    _usersToPushDataTo.Clear();
-                }
-                finally
-                {
-                    _pushDataSemaphore.Release();
-                }
+                _pushDataSemaphore.Release();
             }
         });
     }

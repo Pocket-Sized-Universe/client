@@ -1,5 +1,4 @@
-﻿using PocketSizedUniverse.FileCache;
-using PocketSizedUniverse.MareConfiguration;
+﻿using PocketSizedUniverse.MareConfiguration;
 using PocketSizedUniverse.PlayerData.Pairs;
 using PocketSizedUniverse.PlayerData.Services;
 using PocketSizedUniverse.Services;
@@ -147,7 +146,6 @@ public class MarePlugin : MediatorSubscriberBase, IHostedService
                 return;
             }
             _runtimeServiceScope.ServiceProvider.GetRequiredService<CacheCreationService>();
-            _runtimeServiceScope.ServiceProvider.GetRequiredService<TransientResourceManager>();
             _runtimeServiceScope.ServiceProvider.GetRequiredService<VisibleUserDataDistributor>();
             _runtimeServiceScope.ServiceProvider.GetRequiredService<NotificationService>();
 

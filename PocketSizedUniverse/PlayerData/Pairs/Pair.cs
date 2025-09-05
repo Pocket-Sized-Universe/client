@@ -238,17 +238,36 @@ public class Pair
             foreach (var objectKind in data.FileReplacements.Select(k => k.Key))
             {
                 if (disableIndividualSounds)
+                {
                     data.FileReplacements[objectKind] = data.FileReplacements[objectKind]
-                        .Where(f => !f.GamePaths.Any(p => p.EndsWith("scd", StringComparison.OrdinalIgnoreCase)))
+                        .Where(f => !f.GamePath.EndsWith("scd", StringComparison.OrdinalIgnoreCase))
                         .ToList();
+                    data.FileSwaps[objectKind] = data.FileSwaps[objectKind]
+                        .Where(f => !f.GamePath.EndsWith("scd", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+
                 if (disableIndividualAnimations)
+                {
                     data.FileReplacements[objectKind] = data.FileReplacements[objectKind]
-                        .Where(f => !f.GamePaths.Any(p => p.EndsWith("tmb", StringComparison.OrdinalIgnoreCase) || p.EndsWith("pap", StringComparison.OrdinalIgnoreCase)))
-                        .ToList();
+                        .Where(f => !f.GamePath.EndsWith("tmb", StringComparison.OrdinalIgnoreCase) ||
+                                    f.GamePath.EndsWith("pap", StringComparison.OrdinalIgnoreCase)).ToList();
+                    data.FileSwaps[objectKind] = data.FileSwaps[objectKind]
+                        .Where(f => !f.GamePath.EndsWith("tmb", StringComparison.OrdinalIgnoreCase) ||
+                                    f.GamePath.EndsWith("pap", StringComparison.OrdinalIgnoreCase)).ToList();
+                }
+
                 if (disableIndividualVFX)
+                {
                     data.FileReplacements[objectKind] = data.FileReplacements[objectKind]
-                        .Where(f => !f.GamePaths.Any(p => p.EndsWith("atex", StringComparison.OrdinalIgnoreCase) || p.EndsWith("avfx", StringComparison.OrdinalIgnoreCase)))
+                        .Where(f => !f.GamePath.EndsWith("atex", StringComparison.OrdinalIgnoreCase) ||
+                                    f.GamePath.EndsWith("avfx", StringComparison.OrdinalIgnoreCase))
                         .ToList();
+                    data.FileSwaps[objectKind] = data.FileSwaps[objectKind]
+                        .Where(f => !f.GamePath.EndsWith("atex", StringComparison.OrdinalIgnoreCase) ||
+                                    f.GamePath.EndsWith("avfx", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
             }
         }
 

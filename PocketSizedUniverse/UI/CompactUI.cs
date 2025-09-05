@@ -16,10 +16,9 @@ using PocketSizedUniverse.Services.ServerConfiguration;
 using PocketSizedUniverse.UI.Components;
 using PocketSizedUniverse.UI.Handlers;
 using PocketSizedUniverse.WebAPI;
-using PocketSizedUniverse.WebAPI.Files;
-using PocketSizedUniverse.WebAPI.Files.Models;
 using PocketSizedUniverse.WebAPI.SignalR.Utils;
 using Microsoft.Extensions.Logging;
+using MonoTorrent.Client;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -32,9 +31,9 @@ public class CompactUi : WindowMediatorSubscriberBase
 {
     private readonly ApiController _apiController;
     private readonly MareConfigService _configService;
-    private readonly ConcurrentDictionary<GameObjectHandler, Dictionary<string, FileDownloadStatus>> _currentDownloads = new();
+    private readonly ConcurrentDictionary<GameObjectHandler, Dictionary<string, TorrentManager>> _currentDownloads = new();
     private readonly DrawEntityFactory _drawEntityFactory;
-    private readonly FileUploadManager _fileTransferManager;
+    private readonly BitTorrentService _torrentService;
     private readonly PairManager _pairManager;
     private readonly SelectTagForPairUi _selectGroupForPairUi;
     private readonly SelectPairForTagUi _selectPairsForGroupUi;
@@ -55,7 +54,7 @@ public class CompactUi : WindowMediatorSubscriberBase
     private float _windowContentWidth;
 
     public CompactUi(ILogger<CompactUi> logger, UiSharedService uiShared, MareConfigService configService, ApiController apiController, PairManager pairManager,
-        ServerConfigurationManager serverManager, MareMediator mediator, FileUploadManager fileTransferManager,
+        ServerConfigurationManager serverManager, MareMediator mediator, BitTorrentService torrentService,
         TagHandler tagHandler, DrawEntityFactory drawEntityFactory, SelectTagForPairUi selectTagForPairUi, SelectPairForTagUi selectPairForTagUi,
         PerformanceCollectorService performanceCollectorService, IpcManager ipcManager)
         : base(logger, mediator, "###PocketSizedUniverseMainUI", performanceCollectorService)
@@ -65,7 +64,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         _apiController = apiController;
         _pairManager = pairManager;
         _serverManager = serverManager;
-        _fileTransferManager = fileTransferManager;
+        _torrentService = torrentService;
         _tagHandler = tagHandler;
         _drawEntityFactory = drawEntityFactory;
         _selectGroupForPairUi = selectTagForPairUi;
@@ -195,7 +194,6 @@ public class CompactUi : WindowMediatorSubscriberBase
             using (ImRaii.PushId("pairlist")) DrawPairs();
             ImGui.Separator();
             float pairlistEnd = ImGui.GetCursorPosY();
-            using (ImRaii.PushId("transfers")) DrawTransfers();
             _transferPartHeight = ImGui.GetCursorPosY() - pairlistEnd - ImGui.GetTextLineHeight();
             using (ImRaii.PushId("group-user-popup")) _selectPairsForGroupUi.Draw(_pairManager.DirectPairs);
             using (ImRaii.PushId("grouping-popup")) _selectGroupForPairUi.Draw();
@@ -331,61 +329,6 @@ public class CompactUi : WindowMediatorSubscriberBase
             }
 
             UiSharedService.AttachToolTip(isConnectingOrConnected ? "Disconnect from " + _serverManager.CurrentServer.ServerName : "Connect to " + _serverManager.CurrentServer.ServerName);
-        }
-    }
-
-    private void DrawTransfers()
-    {
-        var currentUploads = _fileTransferManager.CurrentUploads.ToList();
-        ImGui.AlignTextToFramePadding();
-        _uiSharedService.IconText(FontAwesomeIcon.Upload);
-        ImGui.SameLine(35 * ImGuiHelpers.GlobalScale);
-
-        if (currentUploads.Any())
-        {
-            var totalUploads = currentUploads.Count;
-
-            var doneUploads = currentUploads.Count(c => c.IsTransferred);
-            var totalUploaded = currentUploads.Sum(c => c.Transferred);
-            var totalToUpload = currentUploads.Sum(c => c.Total);
-
-            ImGui.TextUnformatted($"{doneUploads}/{totalUploads}");
-            var uploadText = $"({UiSharedService.ByteToString(totalUploaded)}/{UiSharedService.ByteToString(totalToUpload)})";
-            var textSize = ImGui.CalcTextSize(uploadText);
-            ImGui.SameLine(_windowContentWidth - textSize.X);
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(uploadText);
-        }
-        else
-        {
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted("No uploads in progress");
-        }
-
-        var currentDownloads = _currentDownloads.SelectMany(d => d.Value.Values).ToList();
-        ImGui.AlignTextToFramePadding();
-        _uiSharedService.IconText(FontAwesomeIcon.Download);
-        ImGui.SameLine(35 * ImGuiHelpers.GlobalScale);
-
-        if (currentDownloads.Any())
-        {
-            var totalDownloads = currentDownloads.Sum(c => c.TotalFiles);
-            var doneDownloads = currentDownloads.Sum(c => c.TransferredFiles);
-            var totalDownloaded = currentDownloads.Sum(c => c.TransferredBytes);
-            var totalToDownload = currentDownloads.Sum(c => c.TotalBytes);
-
-            ImGui.TextUnformatted($"{doneDownloads}/{totalDownloads}");
-            var downloadText =
-                $"({UiSharedService.ByteToString(totalDownloaded)}/{UiSharedService.ByteToString(totalToDownload)})";
-            var textSize = ImGui.CalcTextSize(downloadText);
-            ImGui.SameLine(_windowContentWidth - textSize.X);
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted(downloadText);
-        }
-        else
-        {
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted("No downloads in progress");
         }
     }
 

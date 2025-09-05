@@ -219,7 +219,7 @@ internal sealed partial class CharaDataHubUi
         _uiSharedService.BooleanToColoredIcon(hasGlamourerdata, false);
 
         ImGui.TextUnformatted("Contains Files");
-        var hasFiles = (updateDto.FileGamePaths ?? []).Any() || (dataDto.OriginalFiles.Any());
+        var hasFiles = (updateDto.FileRedirects ?? []).Any() || (dataDto.FileRedirects.Any());
         UiSharedService.ScaledSameLine(200);
         _uiSharedService.BooleanToColoredIcon(hasFiles, false);
         if (hasFiles && updateDto.IsAppearanceEqual)
@@ -230,10 +230,10 @@ internal sealed partial class CharaDataHubUi
             var pos = ImGui.GetCursorPosX();
             ImGui.NewLine();
             ImGui.SameLine(pos);
-            ImGui.TextUnformatted($"{dataDto.FileGamePaths.DistinctBy(k => k.HashOrFileSwap).Count()} unique file hashes (original upload: {dataDto.OriginalFiles.DistinctBy(k => k.HashOrFileSwap).Count()} file hashes)");
+            ImGui.TextUnformatted($"{dataDto.FileRedirects.DistinctBy(k => k.SwapPath).Count()} unique file hashes (original upload: {dataDto.FileRedirects.DistinctBy(k => k.SwapPath).Count()} file hashes)");
             ImGui.NewLine();
             ImGui.SameLine(pos);
-            ImGui.TextUnformatted($"{dataDto.FileGamePaths.Count} associated game paths");
+            ImGui.TextUnformatted($"{dataDto.FileRedirects.Count} associated game paths");
             ImGui.NewLine();
             ImGui.SameLine(pos);
             ImGui.TextUnformatted($"{dataDto.FileSwaps!.Count} file swaps");
@@ -245,7 +245,7 @@ internal sealed partial class CharaDataHubUi
             }
             else
             {
-                UiSharedService.ColorTextWrapped($"{dataDto.MissingFiles.DistinctBy(k => k.HashOrFileSwap).Count()} files to download this character data are missing on the server", ImGuiColors.DalamudRed);
+                UiSharedService.ColorTextWrapped($"{dataDto.MissingFiles.DistinctBy(k => k.Hash).Count()} files to download this character data are missing on the server", ImGuiColors.DalamudRed);
                 ImGui.NewLine();
                 ImGui.SameLine(pos);
                 if (_uiSharedService.IconTextButton(FontAwesomeIcon.ArrowCircleUp, "Attempt to upload missing files and restore Character Data"))
@@ -703,7 +703,7 @@ internal sealed partial class CharaDataHubUi
                     UiSharedService.AttachToolTip(isDownloadable ? "Can be downloaded by others" : "Cannot be downloaded: Has missing files or data, please review this entry manually");
 
                     ImGui.TableNextColumn();
-                    var count = entry.FileGamePaths.Concat(entry.FileSwaps).Count();
+                    var count = entry.FileSwaps.Count;
                     ImGui.TextUnformatted(count.ToString());
                     if (ImGui.IsItemClicked()) SelectedDtoId = entry.Id;
                     UiSharedService.AttachToolTip(count == 0 ? "No File data attached" : "Has File data attached");

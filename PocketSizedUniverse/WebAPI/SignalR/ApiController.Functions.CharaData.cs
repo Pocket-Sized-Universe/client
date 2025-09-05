@@ -3,6 +3,8 @@ using PocketSizedUniverse.API.Dto.CharaData;
 using PocketSizedUniverse.Services.CharaData.Models;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
+using PocketSizedUniverse.API.Dto.Files;
+using Serilog;
 
 namespace PocketSizedUniverse.WebAPI;
 public partial class ApiController

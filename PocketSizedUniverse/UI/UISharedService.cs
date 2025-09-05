@@ -10,7 +10,6 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
-using PocketSizedUniverse.FileCache;
 using PocketSizedUniverse.Interop.Ipc;
 using PocketSizedUniverse.Localization;
 using PocketSizedUniverse.MareConfiguration;
@@ -23,6 +22,7 @@ using PocketSizedUniverse.Utils;
 using PocketSizedUniverse.WebAPI;
 using PocketSizedUniverse.WebAPI.SignalR;
 using Microsoft.Extensions.Logging;
+using MonoTorrent.Client;
 using System.IdentityModel.Tokens.Jwt;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -42,7 +42,6 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     private const string _notesEnd = "##MARE_SYNCHRONOS_USER_NOTES_END##";
     private const string _notesStart = "##MARE_SYNCHRONOS_USER_NOTES_START##";
     private readonly ApiController _apiController;
-    private readonly CacheMonitor _cacheMonitor;
     private readonly MareConfigService _configService;
     private readonly DalamudUtilService _dalamudUtil;
     private readonly IpcManager _ipcManager;
@@ -74,7 +73,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     private bool _petNamesExists = false;
     private int _serverSelectionIndex = -1;
     public UiSharedService(ILogger<UiSharedService> logger, IpcManager ipcManager, ApiController apiController,
-        CacheMonitor cacheMonitor, FileDialogManager fileDialogManager,
+        FileDialogManager fileDialogManager,
         MareConfigService configService, DalamudUtilService dalamudUtil, IDalamudPluginInterface pluginInterface,
         ITextureProvider textureProvider,
         Dalamud.Localization localization,
@@ -82,7 +81,6 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     {
         _ipcManager = ipcManager;
         _apiController = apiController;
-        _cacheMonitor = cacheMonitor;
         FileDialogManager = fileDialogManager;
         _configService = configService;
         _dalamudUtil = dalamudUtil;
@@ -393,8 +391,16 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         ImGui.PopTextWrapPos();
     }
 
-    public static Vector4 UploadColor((long, long) data) => data.Item1 == 0 ? ImGuiColors.DalamudGrey :
-        data.Item1 == data.Item2 ? ImGuiColors.ParsedGreen : ImGuiColors.DalamudYellow;
+    public static Vector4 UploadColor(TorrentState state)
+    {
+        return state switch
+        {
+            TorrentState.Downloading => ImGuiColors.HealerGreen,
+            TorrentState.Error => ImGuiColors.DalamudRed,
+            TorrentState.Seeding => ImGuiColors.ParsedPink,
+            _ => ImGuiColors.DalamudGrey
+        };
+    }
 
     public bool ApplyNotesFromClipboard(string notes, bool overwrite)
     {
@@ -457,60 +463,6 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         var cacheDirectory = _configService.Current.CacheFolder;
         ImGui.InputText("Storage Folder##cache", ref cacheDirectory, 255, ImGuiInputTextFlags.ReadOnly);
 
-        ImGui.SameLine();
-        using (ImRaii.Disabled(_cacheMonitor.MareWatcher != null))
-        {
-            if (IconButton(FontAwesomeIcon.Folder))
-            {
-                FileDialogManager.OpenFolderDialog("Pick Mare Synchronos Storage Folder", (success, path) =>
-                {
-                    if (!success) return;
-
-                    _isOneDrive = path.Contains("onedrive", StringComparison.OrdinalIgnoreCase);
-                    _isPenumbraDirectory = string.Equals(path.ToLowerInvariant(), _ipcManager.Penumbra.ModDirectory?.ToLowerInvariant(), StringComparison.Ordinal);
-                    var files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
-                    _cacheDirectoryHasOtherFilesThanCache = false;
-                    foreach (var file in files)
-                    {
-                        var fileName = Path.GetFileNameWithoutExtension(file);
-                        if (fileName.Length != 40 && !string.Equals(fileName, "desktop", StringComparison.OrdinalIgnoreCase))
-                        {
-                            _cacheDirectoryHasOtherFilesThanCache = true;
-                            Logger.LogWarning("Found illegal file in {path}: {file}", path, file);
-                            break;
-                        }
-                    }
-                    var dirs = Directory.GetDirectories(path);
-                    if (dirs.Any())
-                    {
-                        _cacheDirectoryHasOtherFilesThanCache = true;
-                        Logger.LogWarning("Found folders in {path} not belonging to Mare: {dirs}", path, string.Join(", ", dirs));
-                    }
-
-                    _isDirectoryWritable = IsDirectoryWritable(path);
-                    _cacheDirectoryIsValidPath = PathRegex().IsMatch(path);
-
-                    if (!string.IsNullOrEmpty(path)
-                        && Directory.Exists(path)
-                        && _isDirectoryWritable
-                        && !_isPenumbraDirectory
-                        && !_isOneDrive
-                        && !_cacheDirectoryHasOtherFilesThanCache
-                        && _cacheDirectoryIsValidPath)
-                    {
-                        _configService.Current.CacheFolder = path;
-                        _configService.Save();
-                        _cacheMonitor.StartMareWatcher(path);
-                        _cacheMonitor.InvokeScan();
-                    }
-                }, _dalamudUtil.IsWine ? @"Z:\" : @"C:\");
-            }
-        }
-        if (_cacheMonitor.MareWatcher != null)
-        {
-            AttachToolTip("Stop the Monitoring before changing the Storage folder. As long as monitoring is active, you cannot change the Storage folder location.");
-        }
-
         if (_isPenumbraDirectory)
         {
             ColorTextWrapped("Do not point the storage path directly to the Penumbra directory. If necessary, make a subfolder in it.", ImGuiColors.DalamudRed);
@@ -569,50 +521,6 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         }
 
         return (T?)_selectedComboItems[comboName];
-    }
-
-    public void DrawFileScanState()
-    {
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("File Scanner Status");
-        ImGui.SameLine();
-        if (_cacheMonitor.IsScanRunning)
-        {
-            ImGui.AlignTextToFramePadding();
-
-            ImGui.TextUnformatted("Scan is running");
-            ImGui.TextUnformatted("Current Progress:");
-            ImGui.SameLine();
-            ImGui.TextUnformatted(_cacheMonitor.TotalFiles == 1
-                ? "Collecting files"
-                : $"Processing {_cacheMonitor.CurrentFileProgress}/{_cacheMonitor.TotalFilesStorage} from storage ({_cacheMonitor.TotalFiles} scanned in)");
-            AttachToolTip("Note: it is possible to have more files in storage than scanned in, " +
-                "this is due to the scanner normally ignoring those files but the game loading them in and using them on your character, so they get " +
-                "added to the local storage.");
-        }
-        else if (_cacheMonitor.HaltScanLocks.Any(f => f.Value > 0))
-        {
-            ImGui.AlignTextToFramePadding();
-
-            ImGui.TextUnformatted("Halted (" + string.Join(", ", _cacheMonitor.HaltScanLocks.Where(f => f.Value > 0).Select(locker => locker.Key + ": " + locker.Value + " halt requests")) + ")");
-            ImGui.SameLine();
-            if (ImGui.Button("Reset halt requests##clearlocks"))
-            {
-                _cacheMonitor.ResetLocks();
-            }
-        }
-        else
-        {
-            ImGui.TextUnformatted("Idle");
-            if (_configService.Current.InitialScanComplete)
-            {
-                ImGui.SameLine();
-                if (IconTextButton(FontAwesomeIcon.Play, "Force rescan"))
-                {
-                    _cacheMonitor.InvokeScan();
-                }
-            }
-        }
     }
 
     public void DrawHelpText(string helpText)

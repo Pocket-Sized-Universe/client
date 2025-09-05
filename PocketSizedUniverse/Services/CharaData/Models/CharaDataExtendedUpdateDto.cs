@@ -28,7 +28,7 @@ public sealed record CharaDataExtendedUpdateDto : CharaDataUpdateDto
         CustomizeData = base.CustomizeData,
         Description = base.Description,
         ExpiryDate = base.ExpiryDate,
-        FileGamePaths = base.FileGamePaths,
+        FileRedirects = base.FileRedirects,
         FileSwaps = base.FileSwaps,
         GlamourerData = base.GlamourerData,
         ShareType = base.ShareType,
@@ -118,24 +118,24 @@ public sealed record CharaDataExtendedUpdateDto : CharaDataUpdateDto
         }
     }
 
-    public new List<GamePathEntry>? FileGamePaths
+    public new List<FileRedirectEntry>? FileRedirects
     {
         get
         {
-            return base.FileGamePaths ?? _charaDataFullDto.FileGamePaths;
+            return base.FileRedirects ?? _charaDataFullDto.FileRedirects;
         }
         set
         {
-            base.FileGamePaths = value;
-            if (!(base.FileGamePaths ?? []).Except(_charaDataFullDto.FileGamePaths).Any()
-                && !_charaDataFullDto.FileGamePaths.Except(base.FileGamePaths ?? []).Any())
+            base.FileRedirects = value;
+            if (!(base.FileRedirects ?? []).Except(_charaDataFullDto.FileRedirects).Any()
+                && !_charaDataFullDto.FileRedirects.Except(base.FileRedirects ?? []).Any())
             {
-                base.FileGamePaths = null;
+                base.FileRedirects = null;
             }
         }
     }
 
-    public new List<GamePathEntry>? FileSwaps
+    public new List<TorrentFileEntry>? FileSwaps
     {
         get
         {
@@ -295,7 +295,7 @@ public sealed record CharaDataExtendedUpdateDto : CharaDataUpdateDto
         base.ShareType = null;
         base.GlamourerData = null;
         base.FileSwaps = null;
-        base.FileGamePaths = null;
+        base.FileRedirects = null;
         base.CustomizeData = null;
         base.ManipulationData = null;
         AllowedUsers = null;
@@ -340,7 +340,7 @@ public sealed record CharaDataExtendedUpdateDto : CharaDataUpdateDto
                 || AllowedGroups != null
                 || base.GlamourerData != null
                 || base.FileSwaps != null
-                || base.FileGamePaths != null
+                || base.FileRedirects != null
                 || base.CustomizeData != null
                 || base.ManipulationData != null
                 || Poses != null;
@@ -348,7 +348,7 @@ public sealed record CharaDataExtendedUpdateDto : CharaDataUpdateDto
     public bool IsAppearanceEqual =>
         string.Equals(GlamourerData, _charaDataFullDto.GlamourerData, StringComparison.Ordinal)
         && string.Equals(CustomizeData, _charaDataFullDto.CustomizeData, StringComparison.Ordinal)
-        && FileGamePaths == _charaDataFullDto.FileGamePaths
+        && FileRedirects == _charaDataFullDto.FileRedirects
         && FileSwaps == _charaDataFullDto.FileSwaps
         && string.Equals(ManipulationData, _charaDataFullDto.ManipulationData, StringComparison.Ordinal);
 }

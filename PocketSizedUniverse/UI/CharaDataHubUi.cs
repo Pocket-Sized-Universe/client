@@ -662,8 +662,6 @@ internal sealed partial class CharaDataHubUi : WindowMediatorSubscriberBase
                     ImGui.SameLine(150);
                     ImGui.TextUnformatted(metaInfo?.UpdatedDate.ToLocalTime().ToString() ?? "-");
                     ImGui.TextUnformatted("Is Downloadable");
-                    ImGui.SameLine(150);
-                    _uiSharedService.BooleanToColoredIcon(metaInfo?.CanBeDownloaded ?? false, inline: false);
                     ImGui.TextUnformatted("Poses");
                     ImGui.SameLine(150);
                     if (metaInfo?.HasPoses ?? false)
@@ -918,11 +916,6 @@ internal sealed partial class CharaDataHubUi : WindowMediatorSubscriberBase
             ImGui.SameLine();
             var favPos = ImGui.GetCursorPosX();
             ImGui.AlignTextToFramePadding();
-            UiSharedService.ColorText(data.FullId, UiSharedService.GetBoolColor(data.CanBeDownloaded));
-            if (!data.CanBeDownloaded)
-            {
-                UiSharedService.AttachToolTip("This data is incomplete on the server and cannot be downloaded. Contact the owner so they can fix it. If you are the owner, review the data in the MCD Online tab.");
-            }
 
             var offsetFromRight = availableWidth - _uiSharedService.GetIconSize(FontAwesomeIcon.Calendar).X - _uiSharedService.GetIconButtonSize(FontAwesomeIcon.ArrowRight).X
                 - _uiSharedService.GetIconButtonSize(FontAwesomeIcon.Plus).X - ImGui.GetStyle().ItemSpacing.X * 2;

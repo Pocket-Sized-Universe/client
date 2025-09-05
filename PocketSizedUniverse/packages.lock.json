@@ -25,9 +25,9 @@
       },
       "Glamourer.Api": {
         "type": "Direct",
-        "requested": "[2.4.0, )",
-        "resolved": "2.4.0",
-        "contentHash": "i8PEKb4R2tyunfHEHZHY+yCx2p6D0hsoQ24Q8UDVb7rNvynzDqMrRhGTQjuF+Tg2XGWA7sb32wJqHXCv0oKoeA=="
+        "requested": "[2.6.0, )",
+        "resolved": "2.6.0",
+        "contentHash": "zysCZgNBRm3k3qvibyw/31MmEckX0Uh0ZsT+Sax3ZHnYIRELr9Qhbz3cjJz7u0RHGIrNJiRpktu/LxgHEqDItw=="
       },
       "K4os.Compression.LZ4.Legacy": {
         "type": "Direct",
@@ -94,6 +94,16 @@
           "Microsoft.Extensions.Options": "9.0.3"
         }
       },
+      "MonoTorrent": {
+        "type": "Direct",
+        "requested": "[3.0.2, )",
+        "resolved": "3.0.2",
+        "contentHash": "kWy0mLj2MKX9uUGe3lnNYfyQhthjUK4IAMNJO8llXP9yB3ZYfGaAy9ag20wMcjTz2YfhKOW/uZ5FR//BYZGeYA==",
+        "dependencies": {
+          "Mono.Nat": "3.0.0",
+          "ReusableTasks": "4.0.0"
+        }
+      },
       "NReco.Logging.File": {
         "type": "Direct",
         "requested": "[1.2.2, )",
@@ -107,9 +117,9 @@
       },
       "Penumbra.Api": {
         "type": "Direct",
-        "requested": "[5.6.0, )",
-        "resolved": "5.6.0",
-        "contentHash": "zMmkxX1+7COn23aTeq0L+UMA79ocmvQdvj5RgksEfTKrKZLbtaqRPCe6NsChyfGvcj79sgfAW/9hJ+FAzzVcNg=="
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "XGWviAZgokj2djpH50FWgM24jOTpKUuDHvd0HwrzBRY6BEMmpb3HfGIl8+BDE/DqbpH63u6aO2TvzUV6BmXT5w=="
       },
       "Penumbra.String": {
         "type": "Direct",
@@ -143,6 +153,11 @@
         "type": "Transitive",
         "resolved": "1.3.8",
         "contentHash": "LhwlPa7c1zs1OV2XadMtAWdImjLIsqFJPoRcIWAadSRn0Ri1DepK65UbWLPmt4riLqx2d40xjXRk0ogpqNtK7g=="
+      },
+      "libsodium": {
+        "type": "Transitive",
+        "resolved": "1.0.20.1",
+        "contentHash": "pkiceEqJDQFHjbga3k/oPfTVX9g+GKJZ1VrkuiLhaymt9YNw1Dr7cX9hNuZuNaWcr9WD0moW55k4pMwzQ7JaZQ=="
       },
       "MessagePack": {
         "type": "Transitive",
@@ -503,6 +518,24 @@
         "resolved": "17.6.3",
         "contentHash": "N0ZIanl1QCgvUumEL1laasU0a7sOE5ZwLZVTn0pAePnfhq8P7SvTjF8Axq+CnavuQkmdQpGNXQ1efZtu5kDFbA=="
       },
+      "Mono.Nat": {
+        "type": "Transitive",
+        "resolved": "3.0.0",
+        "contentHash": "LgRC8/8plJfvr1nCPmyHNIwP4fs346doMA/UVDZvFN0RfGJdyD2uS7Dl1AydxjVLrIvad8ghozI0vYFWcfPeYQ=="
+      },
+      "NSec.Cryptography": {
+        "type": "Transitive",
+        "resolved": "25.4.0",
+        "contentHash": "Z3wPpG0xefMLmhn9T+Ka/EzAmMQPT0THL/5E4lf9cXI/N9rbGH0G23ZFpRcPnD0ast2k7ieG6QSVNIjmfPCXBQ==",
+        "dependencies": {
+          "libsodium": "[1.0.20.1, 1.0.21)"
+        }
+      },
+      "ReusableTasks": {
+        "type": "Transitive",
+        "resolved": "4.0.0",
+        "contentHash": "6EKzscjq+Q+uxD0N5GWUBO2N34cuDiJ08ZxRs1lqS0Hwvnjp6AgimUIX/8dqIxRZbPOG4gcikTMo+PM4D9CfaQ=="
+      },
       "System.Diagnostics.EventLog": {
         "type": "Transitive",
         "resolved": "9.0.3",
@@ -521,7 +554,8 @@
       "pocketsizeduniverse.api": {
         "type": "Project",
         "dependencies": {
-          "MessagePack.Annotations": "[3.1.3, )"
+          "MessagePack.Annotations": "[3.1.3, )",
+          "NSec.Cryptography": "[25.4.0, )"
         }
       }
     }

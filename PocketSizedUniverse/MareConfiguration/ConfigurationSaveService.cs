@@ -15,8 +15,22 @@ public class ConfigurationSaveService : IHostedService
     public const string BackupFolder = "config_backup";
     private readonly MethodInfo _saveMethod;
 
-    public ConfigurationSaveService(ILogger<ConfigurationSaveService> logger, IEnumerable<IConfigService<IMareConfiguration>> configs)
+    public ConfigurationSaveService(ILogger<ConfigurationSaveService> logger, 
+        MareConfigService mareConfig,
+        ServerConfigService serverConfig,
+        NotesConfigService notesConfig,
+        ServerTagConfigService serverTagConfig,
+        TransientConfigService transientConfig,
+        XivDataStorageService xivDataStorageConfig,
+        PlayerPerformanceConfigService performanceConfig,
+        CharaDataConfigService charaDataConfig)
     {
+        var configs = new IConfigService<IMareConfiguration>[] 
+        {
+            mareConfig, serverConfig, notesConfig, serverTagConfig, 
+            transientConfig, xivDataStorageConfig, performanceConfig, charaDataConfig
+        };
+        
         foreach (var config in configs)
         {
             config.ConfigSave += OnConfigurationSave;

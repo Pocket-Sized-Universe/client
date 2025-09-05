@@ -1,6 +1,5 @@
 ﻿using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
-using PocketSizedUniverse.FileCache;
 using PocketSizedUniverse.MareConfiguration;
 using PocketSizedUniverse.MareConfiguration.Models;
 using PocketSizedUniverse.Services.Mediator;
@@ -20,17 +19,15 @@ public sealed class CommandManagerService : IDisposable
     private readonly MareMediator _mediator;
     private readonly MareConfigService _mareConfigService;
     private readonly PerformanceCollectorService _performanceCollectorService;
-    private readonly CacheMonitor _cacheMonitor;
     private readonly ServerConfigurationManager _serverConfigurationManager;
 
     public CommandManagerService(ICommandManager commandManager, PerformanceCollectorService performanceCollectorService,
-        ServerConfigurationManager serverConfigurationManager, CacheMonitor periodicFileScanner,
+        ServerConfigurationManager serverConfigurationManager,
         ApiController apiController, MareMediator mediator, MareConfigService mareConfigService)
     {
         _commandManager = commandManager;
         _performanceCollectorService = performanceCollectorService;
         _serverConfigurationManager = serverConfigurationManager;
-        _cacheMonitor = periodicFileScanner;
         _apiController = apiController;
         _mediator = mediator;
         _mareConfigService = mareConfigService;
@@ -94,10 +91,6 @@ public sealed class CommandManagerService : IDisposable
         else if (string.Equals(splitArgs[0], "gpose", StringComparison.OrdinalIgnoreCase))
         {
             _mediator.Publish(new UiToggleMessage(typeof(CharaDataHubUi)));
-        }
-        else if (string.Equals(splitArgs[0], "rescan", StringComparison.OrdinalIgnoreCase))
-        {
-            _cacheMonitor.InvokeScan();
         }
         else if (string.Equals(splitArgs[0], "perf", StringComparison.OrdinalIgnoreCase))
         {

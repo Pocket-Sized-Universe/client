@@ -1,6 +1,5 @@
 ﻿using PocketSizedUniverse.API.Data;
 using PocketSizedUniverse.API.Data.Enum;
-using PocketSizedUniverse.FileCache;
 using System.Text;
 using System.Text.Json;
 
@@ -16,7 +15,8 @@ public record MareCharaFileData
     public List<FileSwap> FileSwaps { get; set; } = [];
 
     public MareCharaFileData() { }
-    public MareCharaFileData(FileCacheManager manager, string description, CharacterData dto)
+
+    public MareCharaFileData(BitTorrentService manager, string description, CharacterData dto)
     {
         Description = description;
 
@@ -31,25 +31,19 @@ public record MareCharaFileData
 
         if (dto.FileReplacements.TryGetValue(ObjectKind.Player, out var fileReplacements))
         {
-            var grouped = fileReplacements.GroupBy(f => f.Hash, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var file in grouped)
+            foreach (var file in fileReplacements)
             {
-                if (string.IsNullOrEmpty(file.Key))
-                {
-                    foreach (var item in file)
-                    {
-                        FileSwaps.Add(new FileSwap(item.GamePaths, item.FileSwapPath));
-                    }
-                }
-                else
-                {
-                    var filePath = manager.GetFileCacheByHash(file.First().Hash)?.ResolvedFilepath;
-                    if (filePath != null)
-                    {
-                        Files.Add(new FileData(file.SelectMany(f => f.GamePaths), (int)new FileInfo(filePath).Length, file.First().Hash));
-                    }
-                }
+                FileSwaps.Add(new FileSwap(file.GamePath, file.SwapPath));
+            }
+        }
+
+        if (dto.FileSwaps.TryGetValue(ObjectKind.Player, out var fileSwaps))
+        {
+            foreach (var swap in fileSwaps)
+            {
+                var truePath = manager.GetFilePathForHash(swap.Hash).Result;
+                if (truePath == null) continue;
+                Files.Add(new FileData(swap.GamePath, truePath, swap.Hash));
             }
         }
     }
@@ -64,7 +58,7 @@ public record MareCharaFileData
         return JsonSerializer.Deserialize<MareCharaFileData>(Encoding.UTF8.GetString(data))!;
     }
 
-    public record FileSwap(IEnumerable<string> GamePaths, string FileSwapPath);
+    public record FileSwap(string GamePath, string FileSwapPath);
 
-    public record FileData(IEnumerable<string> GamePaths, int Length, string Hash);
+    public record FileData(string GamePath, string TruePath, string Hash);
 }

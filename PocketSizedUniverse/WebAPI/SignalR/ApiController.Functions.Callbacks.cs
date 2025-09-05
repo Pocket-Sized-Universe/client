@@ -8,6 +8,7 @@ using PocketSizedUniverse.MareConfiguration.Models;
 using PocketSizedUniverse.Services.Mediator;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
+using PocketSizedUniverse.API.Dto.Files;
 using static FFXIVClientStructs.FFXIV.Client.Game.UI.MapMarkerData.Delegates;
 
 namespace PocketSizedUniverse.WebAPI;
@@ -24,21 +25,21 @@ public partial class ApiController
     public Task Client_GroupChangePermissions(GroupPermissionDto groupPermission)
     {
         Logger.LogTrace("Client_GroupChangePermissions: {perm}", groupPermission);
-        ExecuteSafely(() => _pairManager.SetGroupPermissions(groupPermission));
+        ExecuteSafely(() => Mediator.Publish(new SetGroupPermissionsMessage(groupPermission)));
         return Task.CompletedTask;
     }
 
     public Task Client_GroupChangeUserPairPermissions(GroupPairUserPermissionDto dto)
     {
         Logger.LogDebug("Client_GroupChangeUserPairPermissions: {dto}", dto);
-        ExecuteSafely(() => _pairManager.UpdateGroupPairPermissions(dto));
+        ExecuteSafely(() => Mediator.Publish(new UpdateGroupPairPermissionsMessage(dto)));
         return Task.CompletedTask;
     }
 
     public Task Client_GroupDelete(GroupDto groupDto)
     {
         Logger.LogTrace("Client_GroupDelete: {dto}", groupDto);
-        ExecuteSafely(() => _pairManager.RemoveGroup(groupDto.Group));
+        ExecuteSafely(() => Mediator.Publish(new RemoveGroupMessage(groupDto.Group)));
         return Task.CompletedTask;
     }
 
@@ -47,8 +48,8 @@ public partial class ApiController
         Logger.LogTrace("Client_GroupPairChangeUserInfo: {dto}", userInfo);
         ExecuteSafely(() =>
         {
-            if (string.Equals(userInfo.UID, UID, StringComparison.Ordinal)) _pairManager.SetGroupStatusInfo(userInfo);
-            else _pairManager.SetGroupPairStatusInfo(userInfo);
+            if (string.Equals(userInfo.UID, UID, StringComparison.Ordinal)) Mediator.Publish(new SetGroupStatusInfoMessage(userInfo));
+            else Mediator.Publish(new SetGroupPairStatusInfoMessage(userInfo));
         });
         return Task.CompletedTask;
     }
@@ -56,28 +57,28 @@ public partial class ApiController
     public Task Client_GroupPairJoined(GroupPairFullInfoDto groupPairInfoDto)
     {
         Logger.LogTrace("Client_GroupPairJoined: {dto}", groupPairInfoDto);
-        ExecuteSafely(() => _pairManager.AddGroupPair(groupPairInfoDto));
+        ExecuteSafely(() => Mediator.Publish(new AddGroupPairMessage(groupPairInfoDto)));
         return Task.CompletedTask;
     }
 
     public Task Client_GroupPairLeft(GroupPairDto groupPairDto)
     {
         Logger.LogTrace("Client_GroupPairLeft: {dto}", groupPairDto);
-        ExecuteSafely(() => _pairManager.RemoveGroupPair(groupPairDto));
+        ExecuteSafely(() => Mediator.Publish(new RemoveGroupPairMessage(groupPairDto)));
         return Task.CompletedTask;
     }
 
     public Task Client_GroupSendFullInfo(GroupFullInfoDto groupInfo)
     {
         Logger.LogTrace("Client_GroupSendFullInfo: {dto}", groupInfo);
-        ExecuteSafely(() => _pairManager.AddGroup(groupInfo));
+        ExecuteSafely(() => Mediator.Publish(new AddGroupMessage(groupInfo)));
         return Task.CompletedTask;
     }
 
     public Task Client_GroupSendInfo(GroupInfoDto groupInfo)
     {
         Logger.LogTrace("Client_GroupSendInfo: {dto}", groupInfo);
-        ExecuteSafely(() => _pairManager.SetGroupInfo(groupInfo));
+        ExecuteSafely(() => Mediator.Publish(new SetGroupInfoMessage(groupInfo)));
         return Task.CompletedTask;
     }
 
@@ -115,49 +116,49 @@ public partial class ApiController
     public Task Client_UpdateUserIndividualPairStatusDto(UserIndividualPairStatusDto dto)
     {
         Logger.LogDebug("Client_UpdateUserIndividualPairStatusDto: {dto}", dto);
-        ExecuteSafely(() => _pairManager.UpdateIndividualPairStatus(dto));
+        ExecuteSafely(() => Mediator.Publish(new UpdateIndividualPairStatusMessage(dto)));
         return Task.CompletedTask;
     }
 
     public Task Client_UserAddClientPair(UserPairDto dto)
     {
         Logger.LogDebug("Client_UserAddClientPair: {dto}", dto);
-        ExecuteSafely(() => _pairManager.AddUserPair(dto, addToLastAddedUser: true));
+        ExecuteSafely(() => Mediator.Publish(new AddUserPairFromDtoMessage(dto, AddToLastAdded: true)));
         return Task.CompletedTask;
     }
 
     public Task Client_UserReceiveCharacterData(OnlineUserCharaDataDto dataDto)
     {
         Logger.LogTrace("Client_UserReceiveCharacterData: {user}", dataDto.User);
-        ExecuteSafely(() => _pairManager.ReceiveCharaData(dataDto));
+        ExecuteSafely(() => Mediator.Publish(new ReceiveCharaDataMessage(dataDto)));
         return Task.CompletedTask;
     }
 
     public Task Client_UserReceiveUploadStatus(UserDto dto)
     {
         Logger.LogTrace("Client_UserReceiveUploadStatus: {dto}", dto);
-        ExecuteSafely(() => _pairManager.ReceiveUploadStatus(dto));
+        ExecuteSafely(() => Mediator.Publish(new ReceiveUploadStatusMessage(dto)));
         return Task.CompletedTask;
     }
 
     public Task Client_UserRemoveClientPair(UserDto dto)
     {
         Logger.LogDebug("Client_UserRemoveClientPair: {dto}", dto);
-        ExecuteSafely(() => _pairManager.RemoveUserPair(dto));
+        ExecuteSafely(() => Mediator.Publish(new RemoveUserPairMessage(dto)));
         return Task.CompletedTask;
     }
 
     public Task Client_UserSendOffline(UserDto dto)
     {
         Logger.LogDebug("Client_UserSendOffline: {dto}", dto);
-        ExecuteSafely(() => _pairManager.MarkPairOffline(dto.User));
+        ExecuteSafely(() => Mediator.Publish(new MarkPairOfflineMessage(dto.User)));
         return Task.CompletedTask;
     }
 
     public Task Client_UserSendOnline(OnlineUserIdentDto dto)
     {
         Logger.LogDebug("Client_UserSendOnline: {dto}", dto);
-        ExecuteSafely(() => _pairManager.MarkPairOnline(dto));
+        ExecuteSafely(() => Mediator.Publish(new MarkPairOnlineMessage(dto)));
         return Task.CompletedTask;
     }
 
@@ -171,7 +172,7 @@ public partial class ApiController
     public Task Client_UserUpdateOtherPairPermissions(UserPermissionsDto dto)
     {
         Logger.LogDebug("Client_UserUpdateOtherPairPermissions: {dto}", dto);
-        ExecuteSafely(() => _pairManager.UpdatePairPermissions(dto));
+        ExecuteSafely(() => Mediator.Publish(new UpdatePairPermissionsMessage(dto)));
         return Task.CompletedTask;
     }
 
@@ -185,7 +186,7 @@ public partial class ApiController
     public Task Client_UserUpdateSelfPairPermissions(UserPermissionsDto dto)
     {
         Logger.LogDebug("Client_UserUpdateSelfPairPermissions: {dto}", dto);
-        ExecuteSafely(() => _pairManager.UpdateSelfPairPermissions(dto));
+        ExecuteSafely(() => Mediator.Publish(new UpdateSelfPairPermissionsMessage(dto)));
         return Task.CompletedTask;
     }
 

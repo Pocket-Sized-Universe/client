@@ -17,7 +17,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
 {
     private readonly ApiController _apiController;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly ConfigurationServiceBase<MareConfig> _configService;
+    private readonly MareConfigService _configService;
     private readonly IDtrBar _dtrBar;
     private readonly Lazy<IDtrBarEntry> _entry;
     private readonly ILogger<DtrEntry> _logger;
@@ -28,7 +28,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
     private string? _tooltip;
     private Colors _colors;
 
-    public DtrEntry(ILogger<DtrEntry> logger, IDtrBar dtrBar, ConfigurationServiceBase<MareConfig> configService, MareMediator mareMediator, PairManager pairManager, ApiController apiController)
+    public DtrEntry(ILogger<DtrEntry> logger, IDtrBar dtrBar, MareConfigService configService, MareMediator mareMediator, PairManager pairManager, ApiController apiController)
     {
         _logger = logger;
         _dtrBar = dtrBar;
@@ -88,10 +88,17 @@ public sealed class DtrEntry : IDisposable, IHostedService
     private IDtrBarEntry CreateEntry()
     {
         _logger.LogTrace("Creating new DtrBar entry");
-        var entry = _dtrBar.Get("Pocket Sized Universe");
-        entry.OnClick = _ => _mareMediator.Publish(new UiToggleMessage(typeof(CompactUi)));
-
-        return entry;
+        try
+        {
+            var entry = _dtrBar.Get("Pocket Sized Universe");
+            entry.OnClick = _ => _mareMediator.Publish(new UiToggleMessage(typeof(CompactUi)));
+            return entry;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create DTR bar entry");
+            throw;
+        }
     }
 
     private async Task RunAsync()
@@ -117,61 +124,69 @@ public sealed class DtrEntry : IDisposable, IHostedService
             return;
         }
 
-        if (!_entry.Value.Shown)
+        try
         {
-            _logger.LogInformation("Showing entry");
-            _entry.Value.Shown = true;
-        }
-
-        string text;
-        string tooltip;
-        Colors colors;
-        if (_apiController.IsConnected)
-        {
-            var pairCount = _pairManager.GetVisibleUserCount();
-            text = $"\uE044 {pairCount}";
-            if (pairCount > 0)
+            // Try to access the entry, which may trigger lazy initialization
+            if (!_entry.Value.Shown)
             {
-                IEnumerable<string> visiblePairs;
-                if (_configService.Current.ShowUidInDtrTooltip)
+                _logger.LogInformation("Showing entry");
+                _entry.Value.Shown = true;
+            }
+
+            string text;
+            string tooltip;
+            Colors colors;
+            if (_apiController.IsConnected)
+            {
+                var pairCount = _pairManager.GetVisibleUserCount();
+                text = $"\uE044 {pairCount}";
+                if (pairCount > 0)
                 {
-                    visiblePairs = _pairManager.GetOnlineUserPairs()
-                        .Where(x => x.IsVisible)
-                        .Select(x => string.Format("{0} ({1})", _configService.Current.PreferNoteInDtrTooltip ? x.GetNote() ?? x.PlayerName : x.PlayerName, x.UserData.AliasOrUID));
+                    IEnumerable<string> visiblePairs;
+                    if (_configService.Current.ShowUidInDtrTooltip)
+                    {
+                        visiblePairs = _pairManager.GetOnlineUserPairs()
+                            .Where(x => x.IsVisible)
+                            .Select(x => string.Format("{0} ({1})", _configService.Current.PreferNoteInDtrTooltip ? x.GetNote() ?? x.PlayerName : x.PlayerName, x.UserData.AliasOrUID));
+                    }
+                    else
+                    {
+                        visiblePairs = _pairManager.GetOnlineUserPairs()
+                            .Where(x => x.IsVisible)
+                            .Select(x => string.Format("{0}", _configService.Current.PreferNoteInDtrTooltip ? x.GetNote() ?? x.PlayerName : x.PlayerName));
+                    }
+
+                    tooltip = $"Pocket Sized Universe: Connected{Environment.NewLine}----------{Environment.NewLine}{string.Join(Environment.NewLine, visiblePairs)}";
+                    colors = _configService.Current.DtrColorsPairsInRange;
                 }
                 else
                 {
-                    visiblePairs = _pairManager.GetOnlineUserPairs()
-                        .Where(x => x.IsVisible)
-                        .Select(x => string.Format("{0}", _configService.Current.PreferNoteInDtrTooltip ? x.GetNote() ?? x.PlayerName : x.PlayerName));
+                    tooltip = "Pocket Sized Universe: Connected";
+                    colors = _configService.Current.DtrColorsDefault;
                 }
-
-                tooltip = $"Pocket Sized Universe: Connected{Environment.NewLine}----------{Environment.NewLine}{string.Join(Environment.NewLine, visiblePairs)}";
-                colors = _configService.Current.DtrColorsPairsInRange;
             }
             else
             {
-                tooltip = "Pocket Sized Universe: Connected";
-                colors = _configService.Current.DtrColorsDefault;
+                text = "\uE044 \uE04C";
+                tooltip = "Pocket Sized Universe: Not Connected";
+                colors = _configService.Current.DtrColorsNotConnected;
+            }
+
+            if (!_configService.Current.UseColorsInDtr)
+                colors = default;
+
+            if (!string.Equals(text, _text, StringComparison.Ordinal) || !string.Equals(tooltip, _tooltip, StringComparison.Ordinal) || colors != _colors)
+            {
+                _text = text;
+                _tooltip = tooltip;
+                _colors = colors;
+                _entry.Value.Text = BuildColoredSeString(text, colors);
+                _entry.Value.Tooltip = tooltip;
             }
         }
-        else
+        catch (Exception ex)
         {
-            text = "\uE044 \uE04C";
-            tooltip = "Pocket Sized Universe: Not Connected";
-            colors = _configService.Current.DtrColorsNotConnected;
-        }
-
-        if (!_configService.Current.UseColorsInDtr)
-            colors = default;
-
-        if (!string.Equals(text, _text, StringComparison.Ordinal) || !string.Equals(tooltip, _tooltip, StringComparison.Ordinal) || colors != _colors)
-        {
-            _text = text;
-            _tooltip = tooltip;
-            _colors = colors;
-            _entry.Value.Text = BuildColoredSeString(text, colors);
-            _entry.Value.Tooltip = tooltip;
+            _logger.LogWarning(ex, "Failed to update DTR entry, DTR bar may not be ready yet");
         }
     }
 

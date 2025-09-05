@@ -48,12 +48,6 @@ internal sealed partial class CharaDataHubUi
 			sb.AppendLine("- No metainfo present");
 			isDisabled = true;
 		}
-		if (!dto?.CanBeDownloaded ?? false)
-		{
-			if (!isDisabled) AddErrorStart(sb);
-			sb.AppendLine("- Character is not downloadable");
-			isDisabled = true;
-		}
 		if (!_uiSharedService.IsInGpose)
 		{
 			if (!isDisabled) AddErrorStart(sb);
@@ -178,7 +172,7 @@ internal sealed partial class CharaDataHubUi
 			_filteredDict = _charaDataManager.SharedWithYouData
 				.SelectMany(k => k.Value)
 				.Where(k =>
-					(!_sharedWithYouDownloadableFilter || k.CanBeDownloaded)
+					(!_sharedWithYouDownloadableFilter)
 					&& (string.IsNullOrEmpty(_sharedWithYouDescriptionFilter) || k.Description.Contains(_sharedWithYouDescriptionFilter, StringComparison.OrdinalIgnoreCase)))
 				.GroupBy(k => k.Uploader)
 				.ToDictionary(k =>

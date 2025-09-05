@@ -3,7 +3,6 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.Havok.Animation;
 using FFXIVClientStructs.Havok.Common.Base.Types;
 using FFXIVClientStructs.Havok.Common.Serialize.Util;
-using PocketSizedUniverse.FileCache;
 using PocketSizedUniverse.Interop.GameModel;
 using PocketSizedUniverse.MareConfiguration;
 using PocketSizedUniverse.PlayerData.Handlers;
@@ -15,15 +14,15 @@ namespace PocketSizedUniverse.Services;
 public sealed class XivDataAnalyzer
 {
     private readonly ILogger<XivDataAnalyzer> _logger;
-    private readonly FileCacheManager _fileCacheManager;
+    private readonly BitTorrentService _torrentService;
     private readonly XivDataStorageService _configService;
     private readonly List<string> _failedCalculatedTris = [];
 
-    public XivDataAnalyzer(ILogger<XivDataAnalyzer> logger, FileCacheManager fileCacheManager,
+    public XivDataAnalyzer(ILogger<XivDataAnalyzer> logger, BitTorrentService torrentService,
         XivDataStorageService configService)
     {
         _logger = logger;
-        _fileCacheManager = fileCacheManager;
+        _torrentService = torrentService;
         _configService = configService;
     }
 
@@ -67,10 +66,10 @@ public sealed class XivDataAnalyzer
     {
         if (_configService.Current.BonesDictionary.TryGetValue(hash, out var bones)) return bones;
 
-        var cacheEntity = _fileCacheManager.GetFileCacheByHash(hash);
+        var cacheEntity = _torrentService.GetFilePathForHash(hash).Result;
         if (cacheEntity == null) return null;
 
-        using BinaryReader reader = new BinaryReader(File.Open(cacheEntity.ResolvedFilepath, FileMode.Open, FileAccess.Read, FileShare.Read));
+        using BinaryReader reader = new BinaryReader(File.Open(cacheEntity, FileMode.Open, FileAccess.Read, FileShare.Read));
 
         // most of this shit is from vfxeditor, surely nothing will change in the pap format :copium:
         reader.ReadInt32(); // ignore
@@ -148,67 +147,5 @@ public sealed class XivDataAnalyzer
         _configService.Current.BonesDictionary[hash] = output;
         _configService.Save();
         return output;
-    }
-
-    public async Task<long> GetTrianglesByHash(string hash)
-    {
-        if (_configService.Current.TriangleDictionary.TryGetValue(hash, out var cachedTris) && cachedTris > 0)
-            return cachedTris;
-
-        if (_failedCalculatedTris.Contains(hash, StringComparer.Ordinal))
-            return 0;
-
-        var path = _fileCacheManager.GetFileCacheByHash(hash);
-        if (path == null || !path.ResolvedFilepath.EndsWith(".mdl", StringComparison.OrdinalIgnoreCase))
-            return 0;
-
-        var filePath = path.ResolvedFilepath;
-
-        try
-        {
-            _logger.LogDebug("Detected Model File {path}, calculating Tris", filePath);
-            var file = new MdlFile(filePath);
-            if (file.LodCount <= 0)
-            {
-                _failedCalculatedTris.Add(hash);
-                _configService.Current.TriangleDictionary[hash] = 0;
-                _configService.Save();
-                return 0;
-            }
-
-            long tris = 0;
-            for (int i = 0; i < file.LodCount; i++)
-            {
-                try
-                {
-                    var meshIdx = file.Lods[i].MeshIndex;
-                    var meshCnt = file.Lods[i].MeshCount;
-                    tris = file.Meshes.Skip(meshIdx).Take(meshCnt).Sum(p => p.IndexCount) / 3;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug(ex, "Could not load lod mesh {mesh} from path {path}", i, filePath);
-                    continue;
-                }
-
-                if (tris > 0)
-                {
-                    _logger.LogDebug("TriAnalysis: {filePath} => {tris} triangles", filePath, tris);
-                    _configService.Current.TriangleDictionary[hash] = tris;
-                    _configService.Save();
-                    break;
-                }
-            }
-
-            return tris;
-        }
-        catch (Exception e)
-        {
-            _failedCalculatedTris.Add(hash);
-            _configService.Current.TriangleDictionary[hash] = 0;
-            _configService.Save();
-            _logger.LogWarning(e, "Could not parse file {file}", filePath);
-            return 0;
-        }
     }
 }

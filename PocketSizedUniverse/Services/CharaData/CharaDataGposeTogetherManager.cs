@@ -110,21 +110,13 @@ public class CharaDataGposeTogetherManager : DisposableMediatorSubscriberBase
         if (playerData == null) return;
         if (!string.Equals(playerData.DataHash.Value, _lastCreatedCharaData?.ApiData.DataHash.Value, StringComparison.Ordinal))
         {
-            List<GamePathEntry> filegamePaths = [.. playerData.FileReplacements[API.Data.Enum.ObjectKind.Player]
-            .Where(u => string.IsNullOrEmpty(u.FileSwapPath)).SelectMany(u => u.GamePaths, (file, path) => new GamePathEntry(file.Hash, path))];
-            List<GamePathEntry> fileSwapPaths = [.. playerData.FileReplacements[API.Data.Enum.ObjectKind.Player]
-            .Where(u => !string.IsNullOrEmpty(u.FileSwapPath)).SelectMany(u => u.GamePaths, (file, path) => new GamePathEntry(file.FileSwapPath, path))];
-            await _charaDataManager.UploadFiles([.. playerData.FileReplacements[API.Data.Enum.ObjectKind.Player]
-            .Where(u => string.IsNullOrEmpty(u.FileSwapPath)).SelectMany(u => u.GamePaths, (file, path) => new GamePathEntry(file.Hash, path))])
-                .ConfigureAwait(false);
-
             CharaDataDownloadDto charaDataDownloadDto = new($"GPOSELOBBY:{CurrentGPoseLobbyId}", new(_apiController.UID))
             {
                 UpdatedDate = DateTime.UtcNow,
                 ManipulationData = playerData.ManipulationData,
                 CustomizeData = playerData.CustomizePlusData[API.Data.Enum.ObjectKind.Player],
-                FileGamePaths = filegamePaths,
-                FileSwaps = fileSwapPaths,
+                FileRedirects = playerData.FileReplacements.SelectMany(kvp => kvp.Value).ToList(),
+                FileSwaps = playerData.FileSwaps.SelectMany(kvp => kvp.Value).ToList(),
                 GlamourerData = playerData.GlamourerData[API.Data.Enum.ObjectKind.Player],
             };
 
@@ -601,15 +593,28 @@ public class CharaDataGposeTogetherManager : DisposableMediatorSubscriberBase
 
     private void OnReceiveCharaData(CharaDataDownloadDto charaDataDownloadDto)
     {
+        Logger.LogInformation("[OnReceiveCharaData] Received character data from {uploader} with {fileCount} file paths", 
+            charaDataDownloadDto.Uploader.AliasOrUID, charaDataDownloadDto.FileSwaps.Count);
+
         if (!_usersInLobby.TryGetValue(charaDataDownloadDto.Uploader.UID, out var lobbyData))
         {
+            Logger.LogWarning("[OnReceiveCharaData] User {uid} not found in lobby, ignoring character data", charaDataDownloadDto.Uploader.UID);
             return;
         }
 
         lobbyData.CharaData = charaDataDownloadDto;
+        Logger.LogInformation("[OnReceiveCharaData] Stored character data for user {uid}. Address={address}, CharaName='{name}'", 
+            charaDataDownloadDto.Uploader.UID, lobbyData.Address, lobbyData.AssociatedCharaName);
+            
         if (lobbyData.Address != nint.Zero && !string.IsNullOrEmpty(lobbyData.AssociatedCharaName))
         {
+            Logger.LogInformation("[OnReceiveCharaData] Triggering ApplyCharaData for user {uid}", charaDataDownloadDto.Uploader.UID);
             _ = ApplyCharaData(lobbyData);
+        }
+        else
+        {
+            Logger.LogInformation("[OnReceiveCharaData] Not applying character data yet - Address={address}, CharaName='{name}'", 
+                lobbyData.Address, lobbyData.AssociatedCharaName);
         }
     }
 

@@ -60,4 +60,12 @@ public class MareConfig : IMareConfiguration
     public int Version { get; set; } = 1;
     public NotificationLocation WarningNotification { get; set; } = NotificationLocation.Both;
     public bool UseFocusTarget { get; set; } = false;
+    
+    // BitTorrent Configuration
+    public int MaxConcurrentTorrentDownloads { get; set; } = 5;
+    public int MaxConcurrentTorrentUploads { get; set; } = 10;
+    public bool EnableBitTorrentDht { get; set; } = true;
+    public int TorrentDownloadRateLimit { get; set; } = 0; // 0 = unlimited
+    public int TorrentUploadRateLimit { get; set; } = 0; // 0 = unlimited
+    public List<string> BitTorrentTrackers { get; set; } = ["udp://tracker.openbittorrent.com:80/announce", "udp://tracker.opentrackr.org:1337/announce"];
 }

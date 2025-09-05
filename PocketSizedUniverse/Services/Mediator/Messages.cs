@@ -1,13 +1,15 @@
 ﻿using Dalamud.Game.ClientState.Objects.Types;
+using MonoTorrent.Client;
 using PocketSizedUniverse.API.Data;
 using PocketSizedUniverse.API.Dto;
 using PocketSizedUniverse.API.Dto.CharaData;
+using PocketSizedUniverse.API.Dto.Files;
 using PocketSizedUniverse.API.Dto.Group;
+using PocketSizedUniverse.API.Dto.User;
 using PocketSizedUniverse.MareConfiguration.Models;
 using PocketSizedUniverse.PlayerData.Handlers;
 using PocketSizedUniverse.PlayerData.Pairs;
 using PocketSizedUniverse.Services.Events;
-using PocketSizedUniverse.WebAPI.Files.Models;
 using System.Numerics;
 
 namespace PocketSizedUniverse.Services.Mediator;
@@ -60,8 +62,9 @@ public record HubReconnectingMessage(Exception? Exception) : SameThreadMessage;
 public record HubReconnectedMessage(string? Arg) : SameThreadMessage;
 public record HubClosedMessage(Exception? Exception) : SameThreadMessage;
 public record DownloadReadyMessage(Guid RequestId) : MessageBase;
-public record DownloadStartedMessage(GameObjectHandler DownloadId, Dictionary<string, FileDownloadStatus> DownloadStatus) : MessageBase;
+public record DownloadStartedMessage(GameObjectHandler DownloadId, Dictionary<string, TorrentManager> DownloadStatus) : MessageBase;
 public record DownloadFinishedMessage(GameObjectHandler DownloadId) : MessageBase;
+public record TorrentFileMessage(TorrentFileDto TorrentFileDto) : MessageBase;
 public record UiToggleMessage(Type UiType) : MessageBase;
 public record PlayerUploadingMessage(GameObjectHandler Handler, bool IsUploading) : MessageBase;
 public record ClearProfileDataMessage(UserData? UserData = null) : MessageBase;
@@ -93,5 +96,28 @@ public record GPoseLobbyReceiveCharaData(CharaDataDownloadDto CharaDataDownloadD
 public record GPoseLobbyReceivePoseData(UserData UserData, PoseData PoseData) : MessageBase;
 public record GPoseLobbyReceiveWorldData(UserData UserData, WorldData WorldData) : MessageBase;
 public record OpenCharaDataHubWithFilterMessage(UserData UserData) : MessageBase;
+
+// PairManager operation messages  
+public record AddGroupMessage(GroupFullInfoDto GroupInfo) : MessageBase;
+public record AddUserPairMessage(UserFullPairDto UserPair) : MessageBase;
+public record AddUserPairFromDtoMessage(UserPairDto UserPair, bool AddToLastAdded = true) : MessageBase;
+public record AddGroupPairMessage(GroupPairFullInfoDto GroupPair) : MessageBase;
+public record MarkPairOnlineMessage(OnlineUserIdentDto OnlineUser, bool SendNotif = true) : MessageBase;
+public record MarkPairOfflineMessage(UserData User) : MessageBase;
+public record ReceiveCharaDataMessage(OnlineUserCharaDataDto CharaData) : MessageBase;
+public record ReceiveUploadStatusMessage(UserDto User) : MessageBase;
+public record RemoveUserPairMessage(UserDto User) : MessageBase;
+public record RemoveGroupMessage(GroupData Group) : MessageBase;
+public record RemoveGroupPairMessage(GroupPairDto GroupPair) : MessageBase;
+public record UpdatePairPermissionsMessage(UserPermissionsDto Permissions) : MessageBase;
+public record UpdateSelfPairPermissionsMessage(UserPermissionsDto Permissions) : MessageBase;
+public record UpdateIndividualPairStatusMessage(UserIndividualPairStatusDto Status) : MessageBase;
+public record SetGroupInfoMessage(GroupInfoDto GroupInfo) : MessageBase;
+public record SetGroupPermissionsMessage(GroupPermissionDto Permissions) : MessageBase;
+public record SetGroupStatusInfoMessage(GroupPairUserInfoDto UserInfo) : MessageBase;
+public record SetGroupPairStatusInfoMessage(GroupPairUserInfoDto UserInfo) : MessageBase;
+public record UpdateGroupPairPermissionsMessage(GroupPairUserPermissionDto Permissions) : MessageBase;
+public record GetOnlineUserPairsRequestMessage(Action<List<Pair>> Callback) : SameThreadMessage;
+
 #pragma warning restore S2094
 #pragma warning restore MA0048 // File name must match type name
