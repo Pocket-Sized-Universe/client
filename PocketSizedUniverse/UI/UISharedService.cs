@@ -461,7 +461,12 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     {
         ColorTextWrapped("Note: The storage folder should be somewhere close to root (i.e. C:\\MareStorage) in a new empty folder. DO NOT point this to your game folder. DO NOT point this to your Penumbra folder.", ImGuiColors.DalamudYellow);
         var cacheDirectory = _configService.Current.CacheFolder;
-        ImGui.InputText("Storage Folder##cache", ref cacheDirectory, 255, ImGuiInputTextFlags.ReadOnly);
+        if (ImGui.InputText("Storage Folder##cache", ref cacheDirectory, 255))
+        {
+            _configService.Current.CacheFolder = cacheDirectory;
+            _configService.Current.InitialScanComplete = true;
+            _configService.Save();
+        }
 
         if (_isPenumbraDirectory)
         {
@@ -474,10 +479,6 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
         else if (!_isDirectoryWritable)
         {
             ColorTextWrapped("The folder you selected does not exist or cannot be written to. Please provide a valid path.", ImGuiColors.DalamudRed);
-        }
-        else if (_cacheDirectoryHasOtherFilesThanCache)
-        {
-            ColorTextWrapped("Your selected directory has files or directories inside that are not Mare related. Use an empty directory or a previous Mare storage directory only.", ImGuiColors.DalamudRed);
         }
         else if (!_cacheDirectoryIsValidPath)
         {

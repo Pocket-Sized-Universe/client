@@ -22,7 +22,7 @@ namespace PocketSizedUniverse.WebAPI;
 public sealed partial class ApiController : DisposableMediatorSubscriberBase, IMareHubClient
 {
     public const string MainServer = "Resonance Cascade (Official PSU Server)";
-    public const string MainServiceUri = "ws://192.168.8.144:6000";
+    public const string MainServiceUri = "wss://universe.nostrathomas.net";
 
     private readonly DalamudUtilService _dalamudUtil;
     private readonly HubFactory _hubFactory;

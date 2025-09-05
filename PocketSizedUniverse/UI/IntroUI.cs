@@ -180,6 +180,7 @@ public partial class IntroUi : WindowMediatorSubscriberBase
                 if (ImGui.Checkbox("Use File Compactor", ref useFileCompactor))
                 {
                     _configService.Current.UseCompactor = useFileCompactor;
+
                     _configService.Save();
                 }
                 UiSharedService.ColorTextWrapped("The File Compactor can save a tremendeous amount of space on the hard disk for downloads through Mare. It will incur a minor CPU penalty on download but can speed up " +
