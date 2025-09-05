@@ -460,10 +460,13 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
     public void DrawCacheDirectorySetting()
     {
         ColorTextWrapped("Note: The storage folder should be somewhere close to root (i.e. C:\\MareStorage) in a new empty folder. DO NOT point this to your game folder. DO NOT point this to your Penumbra folder.", ImGuiColors.DalamudYellow);
-        var cacheDirectory = _configService.Current.CacheFolder;
-        if (ImGui.InputText("Storage Folder##cache", ref cacheDirectory, 255))
+        var cacheDirectory = string.IsNullOrEmpty(_configService.Current.CacheFolder) ? _pluginInterface.GetPluginConfigDirectory() : _configService.Current.CacheFolder;
+        ImGui.InputText("Storage Folder##cache", ref cacheDirectory, 255);
+        _configService.Current.CacheFolder = cacheDirectory;
+        _configService.Save();
+
+        if (!_configService.Current.CacheFolder.IsNullOrEmpty())
         {
-            _configService.Current.CacheFolder = cacheDirectory;
             _configService.Current.InitialScanComplete = true;
             _configService.Save();
         }

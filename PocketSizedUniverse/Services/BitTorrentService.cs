@@ -27,10 +27,11 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
     private readonly MareMediator _mediator;
     private readonly MareConfigService _configService;
 
-    private readonly ClientEngine _clientEngine;
+    private ClientEngine _clientEngine;
 
     public string TorrentsDirectory => Path.Combine(_configService.Current.CacheFolder, "Torrents");
     public string FilesDirectory => Path.Combine(_configService.Current.CacheFolder, "Files");
+    public string CacheDirectory => Path.Combine(_configService.Current.CacheFolder, "TorrentCache");
     private string DhtNodesPath => Path.Combine(_configService.Current.CacheFolder, "dht.dat");
 
     public BitTorrentService(ILogger<BitTorrentService> logger, MareMediator mediator,
@@ -40,16 +41,6 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         _logger = logger;
         _mediator = mediator;
         _configService = configService;
-        var settings = new EngineSettingsBuilder()
-        {
-            CacheDirectory = Path.Combine(_configService.Current.CacheFolder, "TorrentCache"),
-            ListenEndPoints = new Dictionary<string, IPEndPoint>(StringComparer.Ordinal)
-            {
-                { "TCP", new IPEndPoint(IPAddress.Any, 0) }
-            }
-        };
-
-        _clientEngine = new ClientEngine(settings.ToSettings());
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -59,6 +50,17 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         // Ensure torrents directory exists
         Directory.CreateDirectory(TorrentsDirectory);
         Directory.CreateDirectory(FilesDirectory);
+        Directory.CreateDirectory(CacheDirectory);
+        var settings = new EngineSettingsBuilder()
+        {
+            CacheDirectory = CacheDirectory,
+            ListenEndPoints = new Dictionary<string, IPEndPoint>(StringComparer.Ordinal)
+            {
+                { "TCP", new IPEndPoint(IPAddress.Any, 0) }
+            }
+        };
+
+        _clientEngine = new ClientEngine(settings.ToSettings());
 
         await _clientEngine.StartAllAsync().ConfigureAwait(false);
 
