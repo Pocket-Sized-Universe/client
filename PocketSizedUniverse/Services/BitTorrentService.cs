@@ -41,11 +41,6 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         _logger = logger;
         _mediator = mediator;
         _configService = configService;
-    }
-
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Starting BitTorrent service");
 
         // Ensure torrents directory exists
         Directory.CreateDirectory(TorrentsDirectory);
@@ -61,6 +56,12 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         };
 
         _clientEngine = new ClientEngine(settings.ToSettings());
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Starting BitTorrent service");
+
 
         await _clientEngine.StartAllAsync().ConfigureAwait(false);
 
@@ -71,7 +72,6 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Stopping BitTorrent service");
-        Dispose(); // Dispose will stop the engine gracefully
     }
 
     public void Dispose()

@@ -1,16 +1,25 @@
-﻿using PocketSizedUniverse.WebAPI;
+﻿using Dalamud.Plugin;
+using PocketSizedUniverse.WebAPI;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace PocketSizedUniverse.MareConfiguration;
 
 public class ConfigurationMigrator(ILogger<ConfigurationMigrator> logger, TransientConfigService transientConfigService,
-    ServerConfigService serverConfigService) : IHostedService
+    ServerConfigService serverConfigService, MareConfigService mareConfigService, IDalamudPluginInterface pluginInterface) : IHostedService
 {
     private readonly ILogger<ConfigurationMigrator> _logger = logger;
+    private readonly MareConfigService _mareConfigService = mareConfigService;
+    private readonly IDalamudPluginInterface _pluginInterface = pluginInterface;
 
     public void Migrate()
     {
+        if (string.IsNullOrEmpty(_mareConfigService.Current.CacheFolder))
+        {
+            _mareConfigService.Current.CacheFolder = _pluginInterface.GetPluginConfigDirectory();
+            _mareConfigService.Save();
+        }
+
         if (transientConfigService.Current.Version == 0)
         {
             _logger.LogInformation("Migrating Transient Config V0 => V1");
