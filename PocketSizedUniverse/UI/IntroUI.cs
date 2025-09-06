@@ -198,7 +198,7 @@ public partial class IntroUi : WindowMediatorSubscriberBase
 
             if (ImGui.Button("Join the Pocket Sized Universe Discord"))
             {
-                Util.OpenLink("https://discord.gg/mpNdkrTRjW");
+                Util.OpenLink("https://discord.gg/2tdUMMMuB5");
             }
 
             UiSharedService.TextWrapped("For all other non official services you will have to contact the appropriate service provider how to obtain a secret key.");

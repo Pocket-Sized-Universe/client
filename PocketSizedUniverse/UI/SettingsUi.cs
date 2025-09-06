@@ -1676,7 +1676,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         ImGui.SameLine();
         if (ImGui.Button("Pocket Sized Universe Discord"))
         {
-            Util.OpenLink("https://discord.gg/mpNdkrTRjW");
+            Util.OpenLink("https://discord.gg/2tdUMMMuB5");
         }
 
         ImGui.Separator();
