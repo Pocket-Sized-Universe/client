@@ -28,7 +28,6 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
     private readonly MareConfigService _configService;
 
     private ClientEngine _clientEngine;
-    private readonly IPEndPoint _listenEndPoint;
 
     public string TorrentsDirectory => Path.Combine(_configService.Current.CacheFolder, "Torrents");
     public string FilesDirectory => Path.Combine(_configService.Current.CacheFolder, "Files");
@@ -43,8 +42,6 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         _mediator = mediator;
         _configService = configService;
 
-        _listenEndPoint = new IPEndPoint(IPAddress.Any, _configService.Current.ListenPort);
-
         // Ensure torrents directory exists
         Directory.CreateDirectory(TorrentsDirectory);
         Directory.CreateDirectory(FilesDirectory);
@@ -56,7 +53,8 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
             MaximumUploadRate = _configService.Current.TorrentUploadRateLimit,
             ListenEndPoints = new(StringComparer.Ordinal)
             {
-                {"PsuPort", _listenEndPoint }
+                { "IPv4", new IPEndPoint(IPAddress.Parse("0.0.0.0"), _configService.Current.ListenPort) },
+                { "IPv6", new IPEndPoint(IPAddress.IPv6Any, _configService.Current.ListenPort) }
             }
         };
 
@@ -69,7 +67,8 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
 
 
         await _clientEngine.StartAllAsync().ConfigureAwait(false);
-        _logger.LogInformation("Engine listening on {endpoint}", string.Join(',', _clientEngine.Settings.ListenEndPoints.Select(l => l.Value.ToString())));
+        _logger.LogInformation("Engine listening on {endpoint}",
+            string.Join(',', _clientEngine.Settings.ListenEndPoints.Select(l => l.Value.ToString())));
 
         // Start the engine, which will also start DHT if configured
         _logger.LogInformation("BitTorrent engine initialized successfully");
@@ -92,6 +91,7 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         {
             await File.WriteAllBytesAsync(torrentPath, torrentFileDto.Data).ConfigureAwait(false);
         }
+
         var torrent = await Torrent.LoadAsync(torrentPath).ConfigureAwait(false);
         await VerifyAndStartTorrent(torrent).ConfigureAwait(false);
     }
@@ -145,14 +145,13 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         {
             creator.Announces.Add([tracker]);
         }
-        var torrent = await creator.CreateAsync(new TorrentFileSource(newPath), CancellationToken.None).ConfigureAwait(false);
+
+        var torrent = await creator.CreateAsync(new TorrentFileSource(newPath), CancellationToken.None)
+            .ConfigureAwait(false);
 
         return new TorrentFileDto()
         {
-            Hash = hash,
-            Extension = extension,
-            IsForbidden = false,
-            Data = torrent.Encode()
+            Hash = hash, Extension = extension, IsForbidden = false, Data = torrent.Encode()
         };
     }
 
