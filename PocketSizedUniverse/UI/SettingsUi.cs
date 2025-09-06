@@ -100,7 +100,6 @@ public class SettingsUi : WindowMediatorSubscriberBase
     public override void OnOpen()
     {
         _uiShared.ResetOAuthTasksState();
-        _speedTestCts = new();
     }
 
     public override void OnClose()
@@ -108,11 +107,6 @@ public class SettingsUi : WindowMediatorSubscriberBase
         _uiShared.EditTrackerPosition = false;
         _uidToAddForIgnore = string.Empty;
         _secretKeysConversionCts = _secretKeysConversionCts.CancelRecreate();
-        _downloadServersTask = null;
-        _speedTestTask = null;
-        _speedTestCts?.Cancel();
-        _speedTestCts?.Dispose();
-        _speedTestCts = null;
 
         base.OnClose();
     }
@@ -158,533 +152,75 @@ public class SettingsUi : WindowMediatorSubscriberBase
                ((uint)byte.CreateSaturating(color.Z * 255.0f) << 16);
     }
 
-    private void DrawBlockedTransfers()
+    private void DrawTorrentEngine()
     {
-        _lastTab = "BlockedTransfers";
-        UiSharedService.ColorTextWrapped(
-            "Files that you attempted to upload or download that were forbidden to be transferred by their creators will appear here. " +
-            "If you see file paths from your drive here, then those files were not allowed to be uploaded. If you see hashes, those files were not allowed to be downloaded. " +
-            "Ask your paired friend to send you the mod in question through other means, acquire the mod yourself or pester the mod creator to allow it to be sent over Mare.",
-            ImGuiColors.DalamudGrey);
+        _lastTab = "Torrents";
+        _uiShared.BigText("Engine Settings");
+        _uiShared.DrawHelpText("Changing any of these settings requires a plugin restart to take effect");
+        DrawTorrentSettings();
+        _uiShared.BigText("Active Torrents");
+        _uiShared.DrawHelpText("This section shows the active torrents and their progress.");
+        var torrentTable = new TorrentTable(_bitTorrentService.ActiveTorrents);
+        var seeding = _bitTorrentService.ActiveTorrents.Where(t => t.State == TorrentState.Seeding);
+        var downloading = _bitTorrentService.ActiveTorrents.Where(t => t.State == TorrentState.Downloading);
+        ImGui.Text($"Downloading: {downloading.Count()} | Seeding {seeding.Count()}");
+        torrentTable.Draw(ImGui.GetTextLineHeightWithSpacing());
     }
 
-    private void DrawCurrentTransfers()
+    private void DrawTorrentSettings()
     {
-        _lastTab = "Transfers";
-        _uiShared.BigText("Transfer Settings");
-
-        int maxParallelDownloads = _configService.Current.ParallelDownloads;
-        bool useAlternativeUpload = _configService.Current.UseAlternativeFileUpload;
-        int downloadSpeedLimit = _configService.Current.DownloadSpeedLimitInBytes;
-
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("Global Download Speed Limit");
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        if (ImGui.InputInt("###speedlimit", ref downloadSpeedLimit))
+        var upnp = _configService.Current.UseUpnp;
+        if (ImGui.Checkbox("Use UPnP", ref upnp))
         {
-            _configService.Current.DownloadSpeedLimitInBytes = downloadSpeedLimit;
+            _configService.Current.UseUpnp = upnp;
             _configService.Save();
-            Mediator.Publish(new DownloadLimitChangedMessage());
         }
+        UiSharedService.AttachToolTip("UPnP is a protocol that allows devices to be exposed to the internet through a router. " +
+                                       "This is useful for people who are behind a firewall or have a NAT router.");
 
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(100 * ImGuiHelpers.GlobalScale);
-        _uiShared.DrawCombo("###speed", [DownloadSpeeds.Bps, DownloadSpeeds.KBps, DownloadSpeeds.MBps],
-            (s) => s switch
+        var port = _configService.Current.ListenPort;
+        ImGui.SetNextItemWidth(100);
+        if (ImGui.InputInt("Listen Port", ref port, 1, 65535))
+        {
+            _configService.Current.ListenPort = port;
+            _configService.Save();
+        }
+        UiSharedService.AttachToolTip("The port that the BitTorrent engine listens on. " +
+                                       "This is the port that other peers will connect to.");
+
+        var upload = _configService.Current.TorrentUploadRateLimit;
+        ImGui.SetNextItemWidth(100);
+        if (ImGui.InputInt("Upload Rate Limit (B/s)", ref upload, 1, 1000000))
+        {
+            _configService.Current.TorrentUploadRateLimit = upload;
+            _configService.Save();
+        }
+        UiSharedService.AttachToolTip("The maximum upload rate in bytes per second. " +
+                                       "This is the maximum rate that the BitTorrent engine will allow other peers to download from you.");
+
+        var download = _configService.Current.TorrentDownloadRateLimit;
+        ImGui.SetNextItemWidth(100);
+        if (ImGui.InputInt("Download Rate Limit (B/s)", ref download, 1, 1000000))
+        {
+            _configService.Current.TorrentDownloadRateLimit = download;
+            _configService.Save();
+        }
+        UiSharedService.AttachToolTip("The maximum download rate in bytes per second. " +
+                                       "This is the maximum rate that the BitTorrent engine will allow other peers to upload to you.");
+
+        var cachePath = _configService.Current.CacheFolder;
+        if (ImGui.InputText("Storage Directory", ref cachePath))
+        {
+            if (!Directory.Exists(cachePath))
             {
-                DownloadSpeeds.Bps => "Byte/s",
-                DownloadSpeeds.KBps => "KB/s",
-                DownloadSpeeds.MBps => "MB/s",
-                _ => throw new NotSupportedException()
-            }, (s) =>
+                ImGui.SameLine();
+                ImGui.TextColored(ImGuiColors.DalamudRed, "INVALID");
+            }
+            else
             {
-                _configService.Current.DownloadSpeedType = s;
+                _configService.Current.CacheFolder = cachePath;
                 _configService.Save();
-                Mediator.Publish(new DownloadLimitChangedMessage());
-            }, _configService.Current.DownloadSpeedType);
-        ImGui.SameLine();
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted("0 = No limit/infinite");
-
-        if (ImGui.SliderInt("Maximum Parallel Downloads", ref maxParallelDownloads, 1, 10))
-        {
-            _configService.Current.ParallelDownloads = maxParallelDownloads;
-            _configService.Save();
-        }
-
-        if (ImGui.Checkbox("Use Alternative Upload Method", ref useAlternativeUpload))
-        {
-            _configService.Current.UseAlternativeFileUpload = useAlternativeUpload;
-            _configService.Save();
-        }
-
-        _uiShared.DrawHelpText(
-            "This will attempt to upload files in one go instead of a stream. Typically not necessary to enable. Use if you have upload issues.");
-
-        ImGui.Separator();
-        _uiShared.BigText("Transfer UI");
-
-        bool showTransferWindow = _configService.Current.ShowTransferWindow;
-        if (ImGui.Checkbox("Show separate transfer window", ref showTransferWindow))
-        {
-            _configService.Current.ShowTransferWindow = showTransferWindow;
-            _configService.Save();
-        }
-
-        _uiShared.DrawHelpText(
-            $"The download window will show the current progress of outstanding downloads.{Environment.NewLine}{Environment.NewLine}" +
-            $"What do W/Q/P/D stand for?{Environment.NewLine}W = Waiting for Slot (see Maximum Parallel Downloads){Environment.NewLine}" +
-            $"Q = Queued on Server, waiting for queue ready signal{Environment.NewLine}" +
-            $"P = Processing download (aka downloading){Environment.NewLine}" +
-            $"D = Decompressing download");
-        if (!_configService.Current.ShowTransferWindow) ImGui.BeginDisabled();
-        ImGui.Indent();
-        bool editTransferWindowPosition = _uiShared.EditTrackerPosition;
-        if (ImGui.Checkbox("Edit Transfer Window position", ref editTransferWindowPosition))
-        {
-            _uiShared.EditTrackerPosition = editTransferWindowPosition;
-        }
-
-        ImGui.Unindent();
-        if (!_configService.Current.ShowTransferWindow) ImGui.EndDisabled();
-
-        bool showTransferBars = _configService.Current.ShowTransferBars;
-        if (ImGui.Checkbox("Show transfer bars rendered below players", ref showTransferBars))
-        {
-            _configService.Current.ShowTransferBars = showTransferBars;
-            _configService.Save();
-        }
-
-        _uiShared.DrawHelpText(
-            "This will render a progress bar during the download at the feet of the player you are downloading from.");
-
-        if (!showTransferBars) ImGui.BeginDisabled();
-        ImGui.Indent();
-        bool transferBarShowText = _configService.Current.TransferBarsShowText;
-        if (ImGui.Checkbox("Show Download Text", ref transferBarShowText))
-        {
-            _configService.Current.TransferBarsShowText = transferBarShowText;
-            _configService.Save();
-        }
-
-        _uiShared.DrawHelpText("Shows download text (amount of MiB downloaded) in the transfer bars");
-        int transferBarWidth = _configService.Current.TransferBarsWidth;
-        if (ImGui.SliderInt("Transfer Bar Width", ref transferBarWidth, 10, 500))
-        {
-            _configService.Current.TransferBarsWidth = transferBarWidth;
-            _configService.Save();
-        }
-
-        _uiShared.DrawHelpText(
-            "Width of the displayed transfer bars (will never be less wide than the displayed text)");
-        int transferBarHeight = _configService.Current.TransferBarsHeight;
-        if (ImGui.SliderInt("Transfer Bar Height", ref transferBarHeight, 2, 50))
-        {
-            _configService.Current.TransferBarsHeight = transferBarHeight;
-            _configService.Save();
-        }
-
-        _uiShared.DrawHelpText(
-            "Height of the displayed transfer bars (will never be less tall than the displayed text)");
-        bool showUploading = _configService.Current.ShowUploading;
-        if (ImGui.Checkbox("Show 'Uploading' text below players that are currently uploading", ref showUploading))
-        {
-            _configService.Current.ShowUploading = showUploading;
-            _configService.Save();
-        }
-
-        _uiShared.DrawHelpText(
-            "This will render an 'Uploading' text at the feet of the player that is in progress of uploading data.");
-
-        ImGui.Unindent();
-        if (!showUploading) ImGui.BeginDisabled();
-        ImGui.Indent();
-        bool showUploadingBigText = _configService.Current.ShowUploadingBigText;
-        if (ImGui.Checkbox("Large font for 'Uploading' text", ref showUploadingBigText))
-        {
-            _configService.Current.ShowUploadingBigText = showUploadingBigText;
-            _configService.Save();
-        }
-
-        _uiShared.DrawHelpText("This will render an 'Uploading' text in a larger font.");
-
-        ImGui.Unindent();
-
-        if (!showUploading) ImGui.EndDisabled();
-        if (!showTransferBars) ImGui.EndDisabled();
-
-        if (_apiController.IsConnected)
-        {
-            ImGuiHelpers.ScaledDummy(5);
-            ImGui.Separator();
-            ImGuiHelpers.ScaledDummy(10);
-            using var tree = ImRaii.TreeNode("Speed Test to Servers");
-            if (tree)
-            {
-                if (_downloadServersTask == null || ((_downloadServersTask?.IsCompleted ?? false) &&
-                                                     (!_downloadServersTask?.IsCompletedSuccessfully ?? false)))
-                {
-                    if (_uiShared.IconTextButton(FontAwesomeIcon.GroupArrowsRotate, "Update Download Server List"))
-                    {
-                        _downloadServersTask = GetDownloadServerList();
-                    }
-                }
-
-                if (_downloadServersTask != null && _downloadServersTask.IsCompleted &&
-                    !_downloadServersTask.IsCompletedSuccessfully)
-                {
-                    UiSharedService.ColorTextWrapped(
-                        "Failed to get download servers from service, see /xllog for more information",
-                        ImGuiColors.DalamudRed);
-                }
-
-                if (_downloadServersTask != null && _downloadServersTask.IsCompleted &&
-                    _downloadServersTask.IsCompletedSuccessfully)
-                {
-                    if (_speedTestTask == null || _speedTestTask.IsCompleted)
-                    {
-                        if (_uiShared.IconTextButton(FontAwesomeIcon.ArrowRight, "Start Speedtest"))
-                        {
-                            _speedTestTask = RunSpeedTest(_downloadServersTask.Result!,
-                                _speedTestCts?.Token ?? CancellationToken.None);
-                        }
-                    }
-                    else if (!_speedTestTask.IsCompleted)
-                    {
-                        UiSharedService.ColorTextWrapped("Running Speedtest to File Servers...",
-                            ImGuiColors.DalamudYellow);
-                        UiSharedService.ColorTextWrapped(
-                            "Please be patient, depending on usage and load this can take a while.",
-                            ImGuiColors.DalamudYellow);
-                        if (_uiShared.IconTextButton(FontAwesomeIcon.Ban, "Cancel speedtest"))
-                        {
-                            _speedTestCts?.Cancel();
-                            _speedTestCts?.Dispose();
-                            _speedTestCts = new();
-                        }
-                    }
-
-                    if (_speedTestTask != null && _speedTestTask.IsCompleted)
-                    {
-                        if (_speedTestTask.Result != null && _speedTestTask.Result.Count != 0)
-                        {
-                            foreach (var result in _speedTestTask.Result)
-                            {
-                                UiSharedService.TextWrapped(result);
-                            }
-                        }
-                        else
-                        {
-                            UiSharedService.ColorTextWrapped("Speedtest completed with no results",
-                                ImGuiColors.DalamudYellow);
-                        }
-                    }
-                }
             }
-
-            ImGuiHelpers.ScaledDummy(10);
-        }
-
-        ImGui.Separator();
-        _uiShared.BigText("Current Transfers");
-
-        if (ImGui.BeginTabBar("TransfersTabBar"))
-        {
-            if (ApiController.ServerState is ServerState.Connected && ImGui.BeginTabItem("Transfers"))
-            {
-                ImGui.TextUnformatted("Uploads");
-                if (ImGui.BeginTable("UploadsTable", 3))
-                {
-                    ImGui.TableSetupColumn("File");
-                    ImGui.TableSetupColumn("Sent");
-                    ImGui.TableSetupColumn("Received");
-                    ImGui.TableHeadersRow();
-
-                    var currentUploads = _bitTorrentService.GetActiveTorrents()
-                        .Where(t => t.State == TorrentState.Seeding).ToList();
-                    if (currentUploads.Any())
-                    {
-                        foreach (var upload in currentUploads)
-                        {
-                            var color = UiSharedService.UploadColor((upload.State));
-                            var col = ImRaii.PushColor(ImGuiCol.Text, color);
-                            ImGui.TableNextColumn();
-                            ImGui.TextUnformatted(upload.Name);
-                            ImGui.TableNextColumn();
-                            ImGui.TextUnformatted(UiSharedService.ByteToString(upload.Monitor.DataBytesSent));
-                            ImGui.TableNextColumn();
-                            ImGui.TextUnformatted(UiSharedService.ByteToString(upload.Monitor.DataBytesReceived));
-                            col.Dispose();
-                            ImGui.TableNextRow();
-                        }
-                    }
-                    else
-                    {
-                        ImGui.TableNextColumn();
-                        ImGui.TextUnformatted("No uploads in progress");
-                        ImGui.TableNextColumn();
-                        ImGui.TextUnformatted("-");
-                        ImGui.TableNextColumn();
-                        ImGui.TextUnformatted("-");
-                    }
-
-                    ImGui.EndTable();
-                }
-
-                ImGui.Separator();
-                ImGui.TextUnformatted("Downloads");
-                if (ImGui.BeginTable("DownloadsTable", 4))
-                {
-                    ImGui.TableSetupColumn("File");
-                    ImGui.TableSetupColumn("Progress");
-                    ImGui.TableHeadersRow();
-
-                    foreach (var transfer in _bitTorrentService.GetActiveTorrents()
-                                 .Where(t => t.State != TorrentState.Seeding))
-                    {
-                        var color = UiSharedService.UploadColor((transfer.State));
-                        ImGui.TableNextColumn();
-                        ImGui.TextUnformatted(transfer.Name);
-                        var col = ImRaii.PushColor(ImGuiCol.Text, color);
-                        ImGui.TableNextColumn();
-                        ImGui.TextUnformatted(transfer.Progress.ToString(CultureInfo.InvariantCulture));
-                        col.Dispose();
-                        ImGui.TableNextRow();
-                    }
-
-
-                    ImGui.EndTable();
-                }
-
-                ImGui.EndTabItem();
-            }
-
-            if (ImGui.BeginTabItem("Blocked Transfers"))
-            {
-                DrawBlockedTransfers();
-                ImGui.EndTabItem();
-            }
-
-            ImGui.EndTabBar();
-        }
-
-        // Add the Torrent Debug section
-        ImGui.Separator();
-        ImGuiHelpers.ScaledDummy(10);
-        using var torrentTree = ImRaii.TreeNode("Torrent Debug Information");
-        if (torrentTree)
-        {
-            DrawTorrentDebugInfo();
-        }
-    }
-
-    private void DrawTorrentDebugInfo()
-    {
-        _uiShared.DrawHelpText(
-            "This section shows detailed information about all BitTorrent operations for debugging transfer issues.");
-        ImGuiHelpers.ScaledDummy(5);
-
-        // Management buttons
-        if (_uiShared.IconTextButton(FontAwesomeIcon.Sync, "Refresh"))
-        {
-            // Force UI refresh by doing nothing - the data is live
-        }
-
-        ImGui.SameLine();
-
-        UiSharedService.AttachToolTip("Stops and removes any failed or stuck downloads");
-
-        ImGuiHelpers.ScaledDummy(10);
-
-        // Active torrents section
-        _uiShared.BigText("Active Downloads");
-        var activeTorrents = _bitTorrentService.GetActiveTorrents();
-
-        if (activeTorrents.Any())
-        {
-            if (ImGui.BeginTable("ActiveTorrentsTable", 7,
-                    ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg | ImGuiTableFlags.Resizable))
-            {
-                ImGui.TableSetupColumn("Hash", ImGuiTableColumnFlags.WidthFixed, 120);
-                ImGui.TableSetupColumn("State", ImGuiTableColumnFlags.WidthFixed, 80);
-                ImGui.TableSetupColumn("Progress", ImGuiTableColumnFlags.WidthFixed, 80);
-                ImGui.TableSetupColumn("Peers", ImGuiTableColumnFlags.WidthFixed, 50);
-                ImGui.TableSetupColumn("File Path", ImGuiTableColumnFlags.WidthStretch);
-                ImGui.TableHeadersRow();
-
-                foreach (var kvp in activeTorrents)
-                {
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted(kvp.Name[..Math.Min(12, kvp.Name.Length)] + "...");
-                    if (ImGui.IsItemHovered())
-                        ImGui.SetTooltip(kvp.Name);
-
-                    ImGui.TableNextColumn();
-                    var stateColor = UiSharedService.UploadColor(kvp.State);
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"{kvp.Progress:F1}%");
-
-                    ImGui.TableNextColumn();
-                    ImGui.TextUnformatted($"S:{kvp.Peers.Seeds}|L:{kvp.Peers.Leechs}");
-
-                    ImGui.TableNextColumn();
-                    var filePath = kvp.Files?.FirstOrDefault()?.Path ?? "Unknown";
-                    ImGui.TextUnformatted(filePath);
-                    if (ImGui.IsItemHovered() && !string.IsNullOrEmpty(filePath) && filePath != "Unknown")
-                    {
-                        var fullPath = Path.Combine(_configService.Current.CacheFolder, filePath);
-                        ImGui.SetTooltip(fullPath);
-                    }
-
-                    ImGui.TableNextRow();
-                }
-
-                ImGui.EndTable();
-            }
-        }
-        else
-        {
-            UiSharedService.ColorTextWrapped("No active downloads", ImGuiColors.DalamudGrey);
-        }
-
-        ImGuiHelpers.ScaledDummy(10);
-
-        // Engine status section
-        _uiShared.BigText("Engine Status");
-        var engineStatus = "Engine information not available";
-        try
-        {
-            // Use reflection to access private _clientEngine field
-            var engineField = typeof(BitTorrentService).GetField("_clientEngine",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var clientEngine = engineField?.GetValue(_bitTorrentService) as ClientEngine;
-
-            if (clientEngine != null)
-            {
-                var totalTorrents = clientEngine.Torrents?.Count ?? 0;
-                var downloadingCount = clientEngine.Torrents?.Count(t => t.State == TorrentState.Downloading) ?? 0;
-                var seedingCount = clientEngine.Torrents?.Count(t => t.State == TorrentState.Seeding) ?? 0;
-                engineStatus =
-                    $"Total Torrents: {totalTorrents}, Downloading: {downloadingCount}, Seeding: {seedingCount}";
-            }
-        }
-        catch (Exception ex)
-        {
-            engineStatus = $"Error accessing engine: {ex.Message}";
-        }
-
-        ImGui.TextUnformatted(engineStatus);
-
-        // BitTorrent configuration info
-        ImGuiHelpers.ScaledDummy(5);
-        ImGui.TextUnformatted($"Cache Directory: {_configService.Current.CacheFolder}");
-        ImGui.TextUnformatted($"Parallel Downloads: {_configService.Current.ParallelDownloads}");
-        ImGui.TextUnformatted(
-            $"Download Speed Limit: {(_configService.Current.DownloadSpeedLimitInBytes == 0 ? "Unlimited" : UiSharedService.ByteToString(_configService.Current.DownloadSpeedLimitInBytes) + "/s")}");
-
-        var trackers = _configService.Current.BitTorrentTrackers;
-        if (trackers?.Any() == true)
-        {
-            ImGui.TextUnformatted($"Configured Trackers: {string.Join(", ", trackers)}");
-        }
-        else
-        {
-            UiSharedService.ColorText("No BitTorrent trackers configured!", ImGuiColors.DalamudRed);
-        }
-    }
-
-    private Task<List<string>?>? _downloadServersTask = null;
-    private Task<List<string>?>? _speedTestTask = null;
-    private CancellationTokenSource? _speedTestCts;
-
-    private async Task<List<string>?> RunSpeedTest(List<string> servers, CancellationToken token)
-    {
-        List<string> speedTestResults = new();
-        foreach (var server in servers)
-        {
-            HttpResponseMessage? result = null;
-            Stopwatch? st = null;
-            try
-            {
-                result = await _httpClient
-                    .SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri(new Uri(server), "speedtest/run")), token)
-                    .ConfigureAwait(false);
-                result.EnsureSuccessStatusCode();
-                using CancellationTokenSource speedtestTimeCts = new();
-                speedtestTimeCts.CancelAfter(TimeSpan.FromSeconds(10));
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(speedtestTimeCts.Token, token);
-                long readBytes = 0;
-                st = Stopwatch.StartNew();
-                try
-                {
-                    var stream = await result.Content.ReadAsStreamAsync(linkedCts.Token).ConfigureAwait(false);
-                    byte[] buffer = new byte[8192];
-                    while (!speedtestTimeCts.Token.IsCancellationRequested)
-                    {
-                        var currentBytes = await stream.ReadAsync(buffer, linkedCts.Token).ConfigureAwait(false);
-                        if (currentBytes == 0)
-                            break;
-                        readBytes += currentBytes;
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    _logger.LogWarning("Speedtest to {server} cancelled", server);
-                }
-
-                st.Stop();
-                _logger.LogInformation("Downloaded {bytes} from {server} in {time}",
-                    UiSharedService.ByteToString(readBytes), server, st.Elapsed);
-                var bps = (long)((readBytes) / st.Elapsed.TotalSeconds);
-                speedTestResults.Add($"{server}: ~{UiSharedService.ByteToString(bps)}/s");
-            }
-            catch (HttpRequestException ex)
-            {
-                if (result != null)
-                {
-                    var res = await result!.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    speedTestResults.Add($"{server}: {ex.Message} - {res}");
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogWarning("Speedtest on {server} cancelled", server);
-                speedTestResults.Add($"{server}: Cancelled by user");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Some exception");
-            }
-            finally
-            {
-                st?.Stop();
-            }
-        }
-
-        return speedTestResults;
-    }
-
-    private async Task<List<string>?> GetDownloadServerList()
-    {
-        try
-        {
-            var result = await _httpClient
-                .SendAsync(
-                    new HttpRequestMessage(HttpMethod.Get,
-                        new Uri("https://files.pocketsizeduniverse.com/files/downloadServers")), CancellationToken.None)
-                .ConfigureAwait(false);
-            result.EnsureSuccessStatusCode();
-            return await JsonSerializer
-                .DeserializeAsync<List<string>>(await result.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                .ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to get download server list");
-            throw;
         }
     }
 
@@ -2158,15 +1694,9 @@ public class SettingsUi : WindowMediatorSubscriberBase
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Storage"))
+            if (ImGui.BeginTabItem("Torrents"))
             {
-                DrawFileStorageSettings();
-                ImGui.EndTabItem();
-            }
-
-            if (ImGui.BeginTabItem("Transfers"))
-            {
-                DrawCurrentTransfers();
+                DrawTorrentEngine();
                 ImGui.EndTabItem();
             }
 

@@ -28,6 +28,7 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
     private readonly MareConfigService _configService;
 
     private ClientEngine _clientEngine;
+    private readonly IPEndPoint _listenEndPoint;
 
     public string TorrentsDirectory => Path.Combine(_configService.Current.CacheFolder, "Torrents");
     public string FilesDirectory => Path.Combine(_configService.Current.CacheFolder, "Files");
@@ -42,6 +43,8 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         _mediator = mediator;
         _configService = configService;
 
+        _listenEndPoint = new IPEndPoint(IPAddress.Any, _configService.Current.ListenPort);
+
         // Ensure torrents directory exists
         Directory.CreateDirectory(TorrentsDirectory);
         Directory.CreateDirectory(FilesDirectory);
@@ -49,9 +52,11 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         var settings = new EngineSettingsBuilder()
         {
             CacheDirectory = CacheDirectory,
-            ListenEndPoints = new Dictionary<string, IPEndPoint>(StringComparer.Ordinal)
+            MaximumDownloadRate = _configService.Current.TorrentDownloadRateLimit,
+            MaximumUploadRate = _configService.Current.TorrentUploadRateLimit,
+            ListenEndPoints = new(StringComparer.Ordinal)
             {
-                { "TCP", new IPEndPoint(IPAddress.Any, 0) }
+                {"PsuPort", _listenEndPoint }
             }
         };
 
@@ -64,6 +69,7 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
 
 
         await _clientEngine.StartAllAsync().ConfigureAwait(false);
+        _logger.LogInformation("Engine listening on {endpoint}", string.Join(',', _clientEngine.Settings.ListenEndPoints.Select(l => l.Value.ToString())));
 
         // Start the engine, which will also start DHT if configured
         _logger.LogInformation("BitTorrent engine initialized successfully");
@@ -100,8 +106,7 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
 
     public async Task<string?> GetFilePathForHash(string hash)
     {
-        var manager = GetActiveTorrents()
-            .FirstOrDefault(t => string.Equals(t.Name, hash, StringComparison.Ordinal));
+        var manager = ActiveTorrents.FirstOrDefault(t => string.Equals(t.Name, hash, StringComparison.Ordinal));
         if (manager == null)
         {
             _logger.LogDebug("No torrent manager found for hash {hash}", hash);
@@ -154,7 +159,7 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
     public Dictionary<string, TorrentManager> GetActiveTorrentsByHash()
     {
         var activeTorrents = new Dictionary<string, TorrentManager>(StringComparer.Ordinal);
-        foreach (var manager in GetActiveTorrents())
+        foreach (var manager in ActiveTorrents)
         {
             activeTorrents.Add(manager.Torrent?.Name ?? string.Empty, manager);
         }
@@ -162,5 +167,5 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         return activeTorrents;
     }
 
-    public IList<TorrentManager> GetActiveTorrents() => _clientEngine?.Torrents ?? new List<TorrentManager>();
+    public IReadOnlyCollection<TorrentManager> ActiveTorrents => _clientEngine.Torrents.AsReadOnly();
 }

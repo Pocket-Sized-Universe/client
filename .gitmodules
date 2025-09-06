@@ -4,3 +4,6 @@
 [submodule "PsuAPI"]
 	path = PsuAPI
 	url = https://github.com/Pocket-Sized-Universe/api.git
+[submodule "OtterGui"]
+	path = OtterGui
+	url = https://github.com/Ottermandias/OtterGui
