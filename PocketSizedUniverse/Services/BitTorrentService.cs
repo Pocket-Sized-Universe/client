@@ -51,11 +51,14 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
             CacheDirectory = CacheDirectory,
             MaximumDownloadRate = _configService.Current.TorrentDownloadRateLimit,
             MaximumUploadRate = _configService.Current.TorrentUploadRateLimit,
+            AllowLocalPeerDiscovery = true,
+            AllowPortForwarding = true,
             ListenEndPoints = new(StringComparer.Ordinal)
             {
                 { "IPv4", new IPEndPoint(IPAddress.Parse("0.0.0.0"), _configService.Current.ListenPort) },
                 { "IPv6", new IPEndPoint(IPAddress.IPv6Any, _configService.Current.ListenPort) }
-            }
+            },
+            DhtEndPoint = new IPEndPoint(IPAddress.Any, 42070),
         };
 
         _clientEngine = new ClientEngine(settings.ToSettings());
