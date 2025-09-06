@@ -9,6 +9,7 @@ using PocketSizedUniverse.Services.Mediator;
 using Microsoft.Extensions.Logging;
 using PocketSizedUniverse.API.Dto.CharaData;
 using PocketSizedUniverse.Services.CharaData.Models;
+using PocketSizedUniverse.Utils;
 using PocketSizedUniverse.WebAPI;
 using CharacterData = PocketSizedUniverse.PlayerData.Data.CharacterData;
 
@@ -143,7 +144,8 @@ public class PlayerDataFactory
             {
                 if (File.Exists(path.Key))
                 {
-                    var dto = await _torrentService.CreateAndSeedNewTorrent(path.Key).ConfigureAwait(false);
+                    var hash = path.Key.GetFileHash();
+                    var dto = await _apiController.GetTorrentFileForHash(hash).ConfigureAwait(false) ?? await _torrentService.CreateAndSeedNewTorrent(path.Key).ConfigureAwait(false);
                     await _torrentService.EnsureTorrentFileAndStart(dto).ConfigureAwait(false);
                     TorrentFileEntry torrentFile = new(dto.Hash, file, dto);
                     fragment.FileSwaps.Add(torrentFile);

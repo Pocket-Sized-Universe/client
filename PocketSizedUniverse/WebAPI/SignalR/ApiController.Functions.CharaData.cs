@@ -228,4 +228,19 @@ public partial class ApiController
             Logger.LogWarning(ex, "Failed to send World Data to GPose lobby");
         }
     }
+
+    public async Task<TorrentFileDto?> GetTorrentFileForHash(string hash)
+    {
+        if (!IsConnected) return null;
+
+        try
+        {
+            return await _mareHub!.InvokeAsync<TorrentFileDto?>(nameof(GetTorrentFileForHash), hash).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to get torrent file for hash {hash}", hash);
+            return null;
+        }
+    }
 }
