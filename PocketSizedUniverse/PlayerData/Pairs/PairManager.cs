@@ -144,7 +144,8 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
 
     public int GetVisibleUserCount() => _allClientPairs.Count(p => p.Value.IsVisible);
 
-    public List<UserData> GetVisibleUsers() => [.. _allClientPairs.Where(p => p.Value.IsVisible || p.Value.IsOnline).Select(p => p.Key)];
+    public List<UserData> GetVisibleUsers() => [.. _allClientPairs.Where(p => p.Value.IsVisible).Select(p => p.Key)];
+    public List<UserData> GetPairedUsers() => [.. _allClientPairs.Where(p => p.Value.IsOnline).Select(p => p.Key)];
 
     public void MarkPairOffline(UserData user)
     {

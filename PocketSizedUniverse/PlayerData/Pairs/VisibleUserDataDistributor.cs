@@ -67,8 +67,8 @@ public class VisibleUserDataDistributor : DisposableMediatorSubscriberBase
 
     private void PushToAllVisibleUsers(bool forced = false)
     {
-        var visibleUsers = _pairManager.GetVisibleUsers();
-        Logger.LogInformation("PushToAllVisibleUsers called, found {count} visible users", visibleUsers.Count());
+        var visibleUsers = _pairManager.GetPairedUsers();
+        Logger.LogInformation("PushToAllVisibleUsers called, found {count} visible users", visibleUsers.Count);
 
         foreach (var user in visibleUsers)
         {
@@ -76,16 +76,14 @@ public class VisibleUserDataDistributor : DisposableMediatorSubscriberBase
             Logger.LogDebug("Added visible user {user} to push queue", user.AliasOrUID);
         }
 
-        if (_usersToPushDataTo.Count > 0)
+        if (_usersToPushDataTo.Count <= 0)
         {
-            Logger.LogInformation("Pushing data {hash} for {count} visible players",
-                _lastCreatedData?.DataHash.Value ?? "UNKNOWN", _usersToPushDataTo.Count);
-            PushCharacterData(forced);
+            return;
         }
-        else
-        {
-            Logger.LogWarning("No visible users found, cannot trigger BitTorrent upload");
-        }
+
+        Logger.LogInformation("Pushing data {hash} for {count} visible players",
+            _lastCreatedData?.DataHash.Value ?? "UNKNOWN", _usersToPushDataTo.Count);
+        PushCharacterData(forced);
     }
 
     private void FrameworkOnUpdate()
