@@ -87,7 +87,7 @@ public class CompactUi : WindowMediatorSubscriberBase
                 ShowTooltip = () =>
                 {
                     ImGui.BeginTooltip();
-                    ImGui.Text("Open Mare Settings");
+                    ImGui.Text("Open PSU Settings");
                     ImGui.EndTooltip();
                 }
             },
@@ -102,7 +102,7 @@ public class CompactUi : WindowMediatorSubscriberBase
                 ShowTooltip = () =>
                 {
                     ImGui.BeginTooltip();
-                    ImGui.Text("Open Mare Event Viewer");
+                    ImGui.Text("Open PSU Event Viewer");
                     ImGui.EndTooltip();
                 }
             }
@@ -168,7 +168,7 @@ public class CompactUi : WindowMediatorSubscriberBase
             var penumAvailable = _ipcManager.Penumbra.APIAvailable;
             var glamAvailable = _ipcManager.Glamourer.APIAvailable;
 
-            UiSharedService.ColorTextWrapped($"One or more Plugins essential for Mare operation are unavailable. Enable or update following plugins:", ImGuiColors.DalamudRed);
+            UiSharedService.ColorTextWrapped($"One or more Plugins essential for PSU operation are unavailable. Enable or update following plugins:", ImGuiColors.DalamudRed);
             using var indent = ImRaii.PushIndent(10f);
             if (!penumAvailable)
             {
@@ -521,7 +521,7 @@ public class CompactUi : WindowMediatorSubscriberBase
             ServerState.MultiChara => "Your Character Configuration has multiple characters configured with same name and world. You will not be able to connect until you fix this issue. Remove the duplicates from the configuration in Settings -> Service Settings -> Character Management and reconnect manually after.",
             ServerState.OAuthMisconfigured => "OAuth2 is enabled but not fully configured, verify in the Settings -> Service Settings that you have OAuth2 connected and, importantly, a UID assigned to your current character.",
             ServerState.OAuthLoginTokenStale => "Your OAuth2 login token is stale and cannot be used to renew. Go to the Settings -> Service Settings and unlink then relink your OAuth2 configuration.",
-            ServerState.NoAutoLogon => "This character has automatic login into Mare disabled. Press the connect button to connect to Mare.",
+            ServerState.NoAutoLogon => "This character has automatic login into PSU disabled. Press the connect button to connect to Mare.",
             _ => string.Empty
         };
     }

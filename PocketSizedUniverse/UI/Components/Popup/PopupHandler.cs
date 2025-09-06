@@ -18,7 +18,7 @@ public class PopupHandler : WindowMediatorSubscriberBase
 
     public PopupHandler(ILogger<PopupHandler> logger, MareMediator mediator, IEnumerable<IPopupHandler> popupHandlers,
         PerformanceCollectorService performanceCollectorService, UiSharedService uiSharedService)
-        : base(logger, mediator, "MarePopupHandler", performanceCollectorService)
+        : base(logger, mediator, "PsuPopupHandler", performanceCollectorService)
     {
         Flags = ImGuiWindowFlags.NoBringToFrontOnFocus
           | ImGuiWindowFlags.NoDecoration

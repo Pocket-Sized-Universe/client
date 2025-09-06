@@ -486,7 +486,7 @@ public class TopTabMenu
     private void DrawUserConfig(float availableWidth, float spacingX)
     {
         var buttonX = (availableWidth - spacingX) / 2f;
-        if (_uiSharedService.IconTextButton(FontAwesomeIcon.UserCircle, "Edit Mare Profile", buttonX))
+        if (_uiSharedService.IconTextButton(FontAwesomeIcon.UserCircle, "Edit PSU Profile", buttonX))
         {
             _mareMediator.Publish(new UiToggleMessage(typeof(EditProfileUi)));
         }

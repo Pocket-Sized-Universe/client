@@ -459,7 +459,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
     public void DrawCacheDirectorySetting()
     {
-        ColorTextWrapped("Note: The storage folder should be somewhere close to root (i.e. C:\\MareStorage) in a new empty folder. DO NOT point this to your game folder. DO NOT point this to your Penumbra folder.", ImGuiColors.DalamudYellow);
+        ColorTextWrapped("Note: The storage folder should be somewhere close to root (i.e. C:\\PsuStorage) in a new empty folder. DO NOT point this to your game folder. DO NOT point this to your Penumbra folder.", ImGuiColors.DalamudYellow);
         var cacheDirectory = string.IsNullOrEmpty(_configService.Current.CacheFolder) ? _pluginInterface.GetPluginConfigDirectory() : _configService.Current.CacheFolder;
         ImGui.InputText("Storage Folder##cache", ref cacheDirectory, 255);
         _configService.Current.CacheFolder = cacheDirectory;
@@ -723,7 +723,7 @@ public partial class UiSharedService : DisposableMediatorSubscriberBase
 
         if (!_penumbraExists || !_glamourerExists)
         {
-            ImGui.TextColored(ImGuiColors.DalamudRed, "You need to install both Penumbra and Glamourer and keep them up to date to use Mare Synchronos.");
+            ImGui.TextColored(ImGuiColors.DalamudRed, "You need to install both Penumbra and Glamourer and keep them up to date to use Pocket Sized Universe.");
             return false;
         }
 

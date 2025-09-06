@@ -26,8 +26,8 @@ public class CensusPopupHandler : IPopupHandler
         var start = 0f;
         using (_uiSharedService.UidFont.Push())
         {
-            start = ImGui.GetCursorPosY() - ImGui.CalcTextSize("Mare Census Data").Y;
-            UiSharedService.TextWrapped("Mare Census Participation");
+            start = ImGui.GetCursorPosY() - ImGui.CalcTextSize("PSU Census Data").Y;
+            UiSharedService.TextWrapped("PSU Census Participation");
         }
         ImGuiHelpers.ScaledDummy(5f);
         UiSharedService.TextWrapped("If you are seeing this popup you are updating from a Mare version that did not collect census data. Please read the following carefully.");
