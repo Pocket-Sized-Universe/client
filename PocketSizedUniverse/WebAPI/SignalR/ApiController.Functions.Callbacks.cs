@@ -15,13 +15,6 @@ namespace PocketSizedUniverse.WebAPI;
 
 public partial class ApiController
 {
-    public Task Client_DownloadReady(Guid requestId)
-    {
-        Logger.LogDebug("Server sent {requestId} ready", requestId);
-        Mediator.Publish(new DownloadReadyMessage(requestId));
-        return Task.CompletedTask;
-    }
-
     public Task Client_GroupChangePermissions(GroupPermissionDto groupPermission)
     {
         Logger.LogTrace("Client_GroupChangePermissions: {perm}", groupPermission);
@@ -223,12 +216,6 @@ public partial class ApiController
         //Logger.LogDebug("Client_GposeLobbyPushWorldData: {dto}", userData);
         ExecuteSafely(() => Mediator.Publish(new GPoseLobbyReceiveWorldData(userData, worldData)));
         return Task.CompletedTask;
-    }
-
-    public void OnDownloadReady(Action<Guid> act)
-    {
-        if (_initialized) return;
-        _mareHub!.On(nameof(Client_DownloadReady), act);
     }
 
     public void OnGroupChangePermissions(Action<GroupPermissionDto> act)

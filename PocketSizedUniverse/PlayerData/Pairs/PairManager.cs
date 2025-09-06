@@ -10,6 +10,7 @@ using PocketSizedUniverse.PlayerData.Factories;
 using PocketSizedUniverse.Services.Events;
 using PocketSizedUniverse.Services.Mediator;
 using Microsoft.Extensions.Logging;
+using PocketSizedUniverse.Services;
 using System.Collections.Concurrent;
 
 namespace PocketSizedUniverse.PlayerData.Pairs;
@@ -21,17 +22,19 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     private readonly MareConfigService _configurationService;
     private readonly IContextMenu _dalamudContextMenu;
     private readonly PairFactory _pairFactory;
+    private readonly BitTorrentService _torrentService;
     private Lazy<List<Pair>> _directPairsInternal;
     private Lazy<Dictionary<GroupFullInfoDto, List<Pair>>> _groupPairsInternal;
     private Lazy<Dictionary<Pair, List<GroupFullInfoDto>>> _pairsWithGroupsInternal;
 
     public PairManager(ILogger<PairManager> logger, PairFactory pairFactory,
                 MareConfigService configurationService, MareMediator mediator,
-                IContextMenu dalamudContextMenu) : base(logger, mediator)
+                IContextMenu dalamudContextMenu, BitTorrentService torrentService) : base(logger, mediator)
     {
         _pairFactory = pairFactory;
         _configurationService = configurationService;
         _dalamudContextMenu = dalamudContextMenu;
+        _torrentService = torrentService;
         Mediator.Subscribe<DisconnectedMessage>(this, (_) => ClearPairs());
         Mediator.Subscribe<CutsceneEndMessage>(this, (_) => ReapplyPairData());
         
@@ -192,8 +195,11 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     public void ReceiveCharaData(OnlineUserCharaDataDto dto)
     {
         if (!_allClientPairs.TryGetValue(dto.User, out var pair)) throw new InvalidOperationException("No user found for " + dto.User);
-
         Mediator.Publish(new EventMessage(new Event(pair.UserData, nameof(PairManager), EventSeverity.Informational, "Received Character Data")));
+        foreach (var torrent in  dto.CharaData.FileSwaps.SelectMany(v => v.Value).Select(t => t.TorrentFile))
+        {
+            _torrentService.EnsureTorrentFileAndStart(torrent).ConfigureAwait(false).GetAwaiter().GetResult();
+        }
         _allClientPairs[dto.User].ApplyData(dto);
     }
 
