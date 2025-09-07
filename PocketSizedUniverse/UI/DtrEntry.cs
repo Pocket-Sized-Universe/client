@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 using PocketSizedUniverse.MareConfiguration;
 using PocketSizedUniverse.MareConfiguration.Configurations;
@@ -139,7 +140,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
             if (_apiController.IsConnected)
             {
                 var pairCount = _pairManager.GetVisibleUserCount();
-                text = $"\uE044 {pairCount}";
+                text = $"{pairCount}";
                 if (pairCount > 0)
                 {
                     IEnumerable<string> visiblePairs;
@@ -167,7 +168,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
             }
             else
             {
-                text = "\uE044 \uE04C";
+                text = "\uE04C";
                 tooltip = "Pocket Sized Universe: Not Connected";
                 colors = _configService.Current.DtrColorsNotConnected;
             }
@@ -201,6 +202,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
             ssb.Add(BuildColorStartPayload(_colorTypeForeground, colors.Foreground));
         if (colors.Glow != default)
             ssb.Add(BuildColorStartPayload(_colorTypeGlow, colors.Glow));
+        ssb.AddIcon(BitmapFontIcon.CrossWorld);
         ssb.AddText(text);
         if (colors.Glow != default)
             ssb.Add(BuildColorEndPayload(_colorTypeGlow));
