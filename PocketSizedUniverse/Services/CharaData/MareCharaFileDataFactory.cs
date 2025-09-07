@@ -5,9 +5,9 @@ namespace PocketSizedUniverse.Services.CharaData;
 
 public sealed class MareCharaFileDataFactory
 {
-    private readonly BitTorrentService _bitTorrentService;
+    private readonly FileCacheInfoFactory _bitTorrentService;
 
-    public MareCharaFileDataFactory(BitTorrentService fileCacheManager)
+    public MareCharaFileDataFactory(FileCacheInfoFactory fileCacheManager)
     {
         _bitTorrentService = fileCacheManager;
     }

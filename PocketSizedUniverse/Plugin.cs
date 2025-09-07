@@ -205,6 +205,7 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddScoped<UiService>();
             collection.AddScoped<CommandManagerService>();
             collection.AddScoped<UiSharedService>();
+            collection.AddScoped<FileCacheInfoFactory>();
 
             collection.AddHostedService(p => p.GetRequiredService<ConfigurationSaveService>());
             collection.AddHostedService(p => p.GetRequiredService<MareMediator>());

@@ -87,10 +87,8 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
     public async Task EnsureTorrentFileAndStart(TorrentFileDto torrentFileDto)
     {
         var torrentPath = Path.Combine(TorrentsDirectory, torrentFileDto.TorrentName);
-        if (!File.Exists(torrentPath))
-        {
-            await File.WriteAllBytesAsync(torrentPath, torrentFileDto.Data).ConfigureAwait(false);
-        }
+        // Always write fresh torrent data to ensure we have the correct file
+        await File.WriteAllBytesAsync(torrentPath, torrentFileDto.Data).ConfigureAwait(false);
 
         var torrent = await Torrent.LoadAsync(torrentPath).ConfigureAwait(false);
         await VerifyAndStartTorrent(torrent).ConfigureAwait(false);
@@ -104,35 +102,17 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         await manager.HashCheckAsync(true).ConfigureAwait(false);
     }
 
-    public async Task<string?> GetFilePathForHash(string hash)
+    public TorrentManager? GetTorrentManagerByTorrentFile(TorrentFileDto? torrentFileDto)
     {
-        var manager = ActiveTorrents.FirstOrDefault(t => string.Equals(t.Name, hash, StringComparison.Ordinal));
-        if (manager == null)
-        {
-            _logger.LogDebug("No torrent manager found for hash {hash}", hash);
-            return null;
-        }
-
-        if (manager.Progress >= 100.00)
-        {
-            _logger.LogDebug("Torrent manager for hash {hash} is already complete", hash);
-            return manager.Files.FirstOrDefault()?.FullPath;
-        }
-
-        _logger.LogDebug("Torrent manager for hash {hash} is not complete", hash);
-        return null;
+        if (torrentFileDto == null) return null;
+        return _clientEngine.Torrents.FirstOrDefault(t => string.Equals(t.Name, torrentFileDto.Filename, StringComparison.Ordinal));
     }
 
-    public async Task<TorrentFileDto> CreateAndSeedNewTorrent(string filePath)
+    public async Task<TorrentFileDto> CreateAndSeedNewTorrent(string cachePath)
     {
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException("File does not exist", filePath);
-
-        var fileInfo = new FileInfo(filePath);
-        var hash = filePath.GetFileHash();
-        var extension = Path.GetExtension(filePath);
-        var newPath = Path.Combine(FilesDirectory, $"{hash}{extension}");
-        File.Copy(filePath, newPath, overwrite: true);
+        var fileInfo = new FileInfo(cachePath);
+        var hash = cachePath.GetFileHash();
+        var extension = Path.GetExtension(cachePath);
         var creator = new TorrentCreator()
         {
             Comment = "Pocket Sized Universe File Share",
@@ -146,7 +126,7 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
             creator.Announces.Add([tracker]);
         }
 
-        var torrent = await creator.CreateAsync(new TorrentFileSource(newPath), CancellationToken.None)
+        var torrent = await creator.CreateAsync(new TorrentFileSource(cachePath), CancellationToken.None)
             .ConfigureAwait(false);
 
         return new TorrentFileDto()

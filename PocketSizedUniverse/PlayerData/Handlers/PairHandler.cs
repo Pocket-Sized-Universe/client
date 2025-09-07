@@ -27,6 +27,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
     private readonly IHostApplicationLifetime _lifetime;
     private readonly ServerConfigurationManager _serverConfigManager;
     private readonly PluginWarningNotificationService _pluginWarningNotificationManager;
+    private readonly FileCacheInfoFactory _fileCacheInfoFactory;
     private CancellationTokenSource? _applicationCancellationTokenSource = new();
     private Guid _applicationId;
     private Task? _applicationTask;
@@ -45,7 +46,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         IpcManager ipcManager, BitTorrentService bitTorrentService,
         PluginWarningNotificationService pluginWarningNotificationManager,
         DalamudUtilService dalamudUtil, IHostApplicationLifetime lifetime,
-        MareMediator mediator,
+        MareMediator mediator, FileCacheInfoFactory fileCacheInfoFactory,
         ServerConfigurationManager serverConfigManager) : base(logger, mediator)
     {
         Pair = pair;
@@ -56,6 +57,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         _dalamudUtil = dalamudUtil;
         _lifetime = lifetime;
         _serverConfigManager = serverConfigManager;
+        _fileCacheInfoFactory = fileCacheInfoFactory;
         _penumbraCollection = _ipcManager.Penumbra.CreateTemporaryCollectionAsync(logger, Pair.UserData.UID)
             .ConfigureAwait(false).GetAwaiter().GetResult();
 
@@ -471,7 +473,8 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                 foreach (var file in toDownloadReplacements)
                 {
                     Logger.LogDebug("[BASE-{appBase}] Downloading {file}", applicationBase, file);
-                    _ = _torrentService.EnsureTorrentFileAndStart(file.TorrentFile).ConfigureAwait(false);
+                    var fileCache = _fileCacheInfoFactory.CreateFromHash(file.Hash);
+                    await fileCache.EnsureTorrentFileAndStart().ConfigureAwait(false);
                 }
 
 
@@ -757,10 +760,12 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                 (item) =>
                 {
                     token.ThrowIfCancellationRequested();
-                    var fileCache = _torrentService.GetFilePathForHash(item.Hash).Result;
-                    if (fileCache != null)
+                    var fileCache = _fileCacheInfoFactory.CreateFromHash(item.Hash);
+                    fileCache.EnsureTorrentFileAndStart().GetAwaiter().GetResult();
+                    var trueFile = fileCache.TrueFile;
+                    if (trueFile != null)
                     {
-                        outputDict[(item.GamePath, item.Hash)] = fileCache;
+                        outputDict[(item.GamePath, item.Hash)] = trueFile.FullName;
                     }
                     else
                     {

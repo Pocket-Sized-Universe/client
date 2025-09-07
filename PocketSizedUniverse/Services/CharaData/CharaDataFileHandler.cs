@@ -20,18 +20,20 @@ public sealed class CharaDataFileHandler : IDisposable
     private readonly ILogger<CharaDataFileHandler> _logger;
     private readonly MareCharaFileDataFactory _mareCharaFileDataFactory;
     private readonly PlayerDataFactory _playerDataFactory;
+    private readonly FileCacheInfoFactory _fileCacheInfoFactory;
     private int _globalFileCounter = 0;
 
     public CharaDataFileHandler(ILogger<CharaDataFileHandler> logger, BitTorrentService torrentService,
         DalamudUtilService dalamudUtilService, GameObjectHandlerFactory gameObjectHandlerFactory,
-        PlayerDataFactory playerDataFactory)
+        PlayerDataFactory playerDataFactory, FileCacheInfoFactory fileCacheInfoFactory)
     {
         _torrentService = torrentService;
         _logger = logger;
         _dalamudUtilService = dalamudUtilService;
         _gameObjectHandlerFactory = gameObjectHandlerFactory;
         _playerDataFactory = playerDataFactory;
-        _mareCharaFileDataFactory = new(_torrentService);
+        _fileCacheInfoFactory = fileCacheInfoFactory;
+        _mareCharaFileDataFactory = new(_fileCacheInfoFactory);
     }
 
     public void ComputeMissingFiles(CharaDataDownloadDto charaDataDownloadDto, out Dictionary<string, string> modPaths,
@@ -45,7 +47,9 @@ public sealed class CharaDataFileHandler : IDisposable
 
         foreach (var file in charaDataDownloadDto.FileSwaps)
         {
-            var localCacheFile = _torrentService.GetFilePathForHash(file.Hash).Result;
+            var localCache = _fileCacheInfoFactory.CreateFromHash(file.Hash);
+            localCache.EnsureTorrentFileAndStart().ConfigureAwait(false).GetAwaiter().GetResult();
+            var localCacheFile = localCache.TrueFile;
             if (localCacheFile == null)
             {
                 var existingFile = missingFiles.Find(f => string.Equals(f.Hash, file.Hash, StringComparison.Ordinal));
@@ -56,7 +60,7 @@ public sealed class CharaDataFileHandler : IDisposable
             }
             else
             {
-                modPaths[file.GamePath] = localCacheFile;
+                modPaths[file.GamePath] = localCacheFile.FullName;
             }
         }
 
@@ -108,14 +112,17 @@ public sealed class CharaDataFileHandler : IDisposable
         // Log details of missing files and their magnet links
         foreach (var file in missingFiles)
         {
-            await _torrentService.EnsureTorrentFileAndStart(file.TorrentFile).ConfigureAwait(false);
+            var cacheInfo = _fileCacheInfoFactory.CreateFromHash(file.Hash);
+            await cacheInfo.EnsureTorrentFileAndStart().ConfigureAwait(false);
         }
 
         _logger.LogInformation("[DownloadFilesAsync] Download phase completed, checking for locally cached files...");
         token.ThrowIfCancellationRequested();
         foreach (var file in missingFiles)
         {
-            var localFile = await _torrentService.GetFilePathForHash(file.Hash).ConfigureAwait(false);
+            var localFileCache = _fileCacheInfoFactory.CreateFromHash(file.Hash);
+            await localFileCache.EnsureTorrentFileAndStart().ConfigureAwait(false);
+            var localFile = localFileCache.TrueFile;
             if (localFile == null)
             {
                 _logger.LogError(
@@ -126,7 +133,7 @@ public sealed class CharaDataFileHandler : IDisposable
             else
             {
                 _logger.LogDebug("[DownloadFilesAsync] Found local file for {hash}: {path}", file.Hash, localFile);
-                modPaths[file.Hash] = localFile;
+                modPaths[file.Hash] = localFile.FullName;
             }
         }
 
@@ -263,7 +270,9 @@ public sealed class CharaDataFileHandler : IDisposable
 
             foreach (var item in output.CharaFileData.Files)
             {
-                var file = await _torrentService.GetFilePathForHash(item.Hash)!.ConfigureAwait(false);
+                var fileCache = _fileCacheInfoFactory.CreateFromHash(item.Hash);
+                await fileCache.EnsureTorrentFileAndStart().ConfigureAwait(false);
+                var file = fileCache.TrueFile;
                 if (file == null)
                     continue;
                 _logger.LogDebug("Saving to MCDF: {hash}:{file}", item.Hash, file);
@@ -271,7 +280,7 @@ public sealed class CharaDataFileHandler : IDisposable
 
                     _logger.LogDebug("\t{path}", item.GamePath);
 
-                var fsRead = File.OpenRead(file);
+                var fsRead = File.OpenRead(file.FullName);
                 await using (fsRead.ConfigureAwait(false))
                 {
                     using var br = new BinaryReader(fsRead);

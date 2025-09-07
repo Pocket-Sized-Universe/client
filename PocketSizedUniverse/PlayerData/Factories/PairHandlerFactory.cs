@@ -20,11 +20,12 @@ public class PairHandlerFactory
     private readonly MareMediator _mareMediator;
     private readonly ServerConfigurationManager _serverConfigManager;
     private readonly PluginWarningNotificationService _pluginWarningNotificationManager;
+    private readonly FileCacheInfoFactory _fileCacheInfoFactory;
 
     public PairHandlerFactory(ILoggerFactory loggerFactory, GameObjectHandlerFactory gameObjectHandlerFactory, IpcManager ipcManager,
         BitTorrentService bitTorrentService, DalamudUtilService dalamudUtilService,
         PluginWarningNotificationService pluginWarningNotificationManager, IHostApplicationLifetime hostApplicationLifetime,
-        MareMediator mareMediator,
+        MareMediator mareMediator, FileCacheInfoFactory fileCacheInfoFactory,
         ServerConfigurationManager serverConfigManager)
     {
         _loggerFactory = loggerFactory;
@@ -36,11 +37,12 @@ public class PairHandlerFactory
         _hostApplicationLifetime = hostApplicationLifetime;
         _mareMediator = mareMediator;
         _serverConfigManager = serverConfigManager;
+        _fileCacheInfoFactory = fileCacheInfoFactory;
     }
 
     public PairHandler Create(Pair pair)
     {
         return new PairHandler(_loggerFactory.CreateLogger<PairHandler>(), pair, _gameObjectHandlerFactory,
-            _ipcManager, _torrentService, _pluginWarningNotificationManager, _dalamudUtilService, _hostApplicationLifetime, _mareMediator, _serverConfigManager);
+            _ipcManager, _torrentService, _pluginWarningNotificationManager, _dalamudUtilService, _hostApplicationLifetime, _mareMediator, _fileCacheInfoFactory, _serverConfigManager);
     }
 }

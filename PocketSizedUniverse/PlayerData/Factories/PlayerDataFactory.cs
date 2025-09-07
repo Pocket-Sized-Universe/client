@@ -18,26 +18,26 @@ namespace PocketSizedUniverse.PlayerData.Factories;
 public class PlayerDataFactory
 {
     private readonly DalamudUtilService _dalamudUtil;
-    private readonly BitTorrentService _torrentService;
     private readonly IpcManager _ipcManager;
     private readonly ILogger<PlayerDataFactory> _logger;
     private readonly PerformanceCollectorService _performanceCollector;
     private readonly XivDataAnalyzer _modelAnalyzer;
     private readonly MareMediator _mareMediator;
     private readonly ApiController _apiController;
+    private readonly FileCacheInfoFactory _fileCacheInfoFactory;
 
     public PlayerDataFactory(ILogger<PlayerDataFactory> logger, DalamudUtilService dalamudUtil, IpcManager ipcManager,
         PerformanceCollectorService performanceCollector, XivDataAnalyzer modelAnalyzer, MareMediator mareMediator,
-        BitTorrentService torrentService, ApiController apiController)
+        BitTorrentService torrentService, ApiController apiController, FileCacheInfoFactory fileCacheInfoFactory)
     {
         _logger = logger;
         _dalamudUtil = dalamudUtil;
-        _torrentService = torrentService;
         _ipcManager = ipcManager;
         _performanceCollector = performanceCollector;
         _modelAnalyzer = modelAnalyzer;
         _mareMediator = mareMediator;
         _apiController = apiController;
+        _fileCacheInfoFactory = fileCacheInfoFactory;
         _logger.LogTrace("Creating {this}", nameof(PlayerDataFactory));
     }
 
@@ -145,9 +145,15 @@ public class PlayerDataFactory
                 if (File.Exists(path.Key))
                 {
                     var hash = path.Key.GetFileHash();
-                    var dto = await _apiController.GetTorrentFileForHash(hash).ConfigureAwait(false) ?? await _torrentService.CreateAndSeedNewTorrent(path.Key).ConfigureAwait(false);
-                    await _torrentService.EnsureTorrentFileAndStart(dto).ConfigureAwait(false);
-                    TorrentFileEntry torrentFile = new(dto.Hash, file, dto);
+                    var cacheFile = _fileCacheInfoFactory.CreateFromHash(hash);
+                    ct.ThrowIfCancellationRequested();
+                    await cacheFile.EnsureTorrentFileAndStart().ConfigureAwait(false);
+                    if (cacheFile.TorrentFile == null)
+                    {
+                        await cacheFile.CopyFileToCache(path.Key).ConfigureAwait(false);
+                    }
+                    await cacheFile.EnsureTorrentFileAndStart().ConfigureAwait(false);
+                    TorrentFileEntry torrentFile = new(cacheFile.Hash, file, cacheFile.TorrentFile!);
                     fragment.FileSwaps.Add(torrentFile);
                 }
                 else
@@ -251,8 +257,10 @@ public class PlayerDataFactory
         foreach (var file in fragment.FileSwaps.Where(f => f.GamePath.EndsWith("pap", StringComparison.OrdinalIgnoreCase)).ToList())
         {
             ct.ThrowIfCancellationRequested();
-            var truePath = await _torrentService.GetFilePathForHash(file.Hash).ConfigureAwait(false);
-            if (truePath == null) continue;
+            var fileCache = _fileCacheInfoFactory.CreateFromHash(file.Hash);
+            await fileCache.EnsureTorrentFileAndStart().ConfigureAwait(false);
+            var fileInfo = fileCache.TrueFile;
+            if (fileInfo == null) continue;
 
             var skeletonIndices = await _dalamudUtil.RunOnFrameworkThread(() => _modelAnalyzer.GetBoneIndicesFromPap(file.Hash)).ConfigureAwait(false);
             bool validationFailed = false;
@@ -261,18 +269,18 @@ public class PlayerDataFactory
                 // 105 is the maximum vanilla skellington spoopy bone index
                 if (skeletonIndices.All(k => k.Value.Max() <= 105))
                 {
-                    _logger.LogTrace("All indices of {path} are <= 105, ignoring", truePath);
+                    _logger.LogTrace("All indices of {path} are <= 105, ignoring", fileInfo.FullName);
                     continue;
                 }
 
-                _logger.LogDebug("Verifying bone indices for {path}, found {x} skeletons", truePath, skeletonIndices.Count);
+                _logger.LogDebug("Verifying bone indices for {path}, found {x} skeletons", fileInfo.FullName, skeletonIndices.Count);
 
                 foreach (var boneCount in skeletonIndices.Select(k => k).ToList())
                 {
                     if (boneCount.Value.Max() > boneIndices.SelectMany(b => b.Value).Max())
                     {
                         _logger.LogWarning("Found more bone indices on the animation {path} skeleton {skl} (max indice {idx}) than on any player related skeleton (max indice {idx2})",
-                            truePath, boneCount.Key, boneCount.Value.Max(), boneIndices.SelectMany(b => b.Value).Max());
+                            fileInfo.FullName, boneCount.Key, boneCount.Value.Max(), boneIndices.SelectMany(b => b.Value).Max());
                         validationFailed = true;
                         break;
                     }
@@ -282,7 +290,7 @@ public class PlayerDataFactory
             if (validationFailed)
             {
                 noValidationFailed++;
-                _logger.LogDebug("Removing {file} from sent file replacements and transient data", truePath);
+                _logger.LogDebug("Removing {file} from sent file replacements and transient data", fileInfo.FullName);
                 fragment.FileSwaps.Remove(file);
             }
 

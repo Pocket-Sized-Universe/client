@@ -16,14 +16,16 @@ public sealed class XivDataAnalyzer
     private readonly ILogger<XivDataAnalyzer> _logger;
     private readonly BitTorrentService _torrentService;
     private readonly XivDataStorageService _configService;
+    private readonly FileCacheInfoFactory _fileCacheInfoFactory;
     private readonly List<string> _failedCalculatedTris = [];
 
     public XivDataAnalyzer(ILogger<XivDataAnalyzer> logger, BitTorrentService torrentService,
-        XivDataStorageService configService)
+        XivDataStorageService configService, FileCacheInfoFactory fileCacheInfoFactory)
     {
         _logger = logger;
         _torrentService = torrentService;
         _configService = configService;
+        _fileCacheInfoFactory = fileCacheInfoFactory;
     }
 
     public unsafe Dictionary<string, List<ushort>>? GetSkeletonBoneIndices(GameObjectHandler handler)
@@ -66,10 +68,12 @@ public sealed class XivDataAnalyzer
     {
         if (_configService.Current.BonesDictionary.TryGetValue(hash, out var bones)) return bones;
 
-        var cacheEntity = _torrentService.GetFilePathForHash(hash).Result;
-        if (cacheEntity == null) return null;
+        var cacheEntity = _fileCacheInfoFactory.CreateFromHash(hash);
+        cacheEntity.EnsureTorrentFileAndStart().GetAwaiter().GetResult();
+        var trueFile = cacheEntity.TrueFile;
+        if (trueFile == null) return null;
 
-        using BinaryReader reader = new BinaryReader(File.Open(cacheEntity, FileMode.Open, FileAccess.Read, FileShare.Read));
+        using BinaryReader reader = new BinaryReader(File.Open(trueFile.FullName, FileMode.Open, FileAccess.Read, FileShare.Read));
 
         // most of this shit is from vfxeditor, surely nothing will change in the pap format :copium:
         reader.ReadInt32(); // ignore

@@ -16,7 +16,7 @@ public record MareCharaFileData
 
     public MareCharaFileData() { }
 
-    public MareCharaFileData(BitTorrentService manager, string description, CharacterData dto)
+    public MareCharaFileData(FileCacheInfoFactory fileFactory, string description, CharacterData dto)
     {
         Description = description;
 
@@ -41,9 +41,11 @@ public record MareCharaFileData
         {
             foreach (var swap in fileSwaps)
             {
-                var truePath = manager.GetFilePathForHash(swap.Hash).Result;
-                if (truePath == null) continue;
-                Files.Add(new FileData(swap.GamePath, truePath, swap.Hash));
+                var truePath = fileFactory.CreateFromHash(swap.Hash);
+                _ = truePath.EnsureTorrentFileAndStart().ConfigureAwait(false);
+                var trueFile = truePath.TrueFile;
+                if (trueFile == null) continue;
+                Files.Add(new FileData(swap.GamePath, trueFile.FullName, swap.Hash));
             }
         }
     }
