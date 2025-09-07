@@ -230,7 +230,7 @@ public partial class ApiController
         }
     }
 
-    public async Task<TorrentFileDto?> GetTorrentFileForHash(string hash)
+    public async Task<TorrentFileDto?> GetTorrentFileForHash(byte[] hash)
     {
         if (!IsConnected) return null;
 

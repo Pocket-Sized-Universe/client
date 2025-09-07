@@ -198,8 +198,8 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         Mediator.Publish(new EventMessage(new Event(pair.UserData, nameof(PairManager), EventSeverity.Informational, "Received Character Data")));
         foreach (var torrent in  dto.CharaData.FileSwaps.SelectMany(v => v.Value).Select(t => t.TorrentFile))
         {
-            var fileCache = _fileCacheInfoFactory.CreateFromHash(torrent.Hash);
-            fileCache.EnsureTorrentFileAndStart().ConfigureAwait(false).GetAwaiter().GetResult();
+            var fileCache = _fileCacheInfoFactory.CreateFromTorrentFileDto(torrent);
+            fileCache.ProcessFile().GetAwaiter().GetResult();
         }
         _allClientPairs[dto.User].ApplyData(dto);
     }

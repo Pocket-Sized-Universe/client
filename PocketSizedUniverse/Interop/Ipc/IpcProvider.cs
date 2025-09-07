@@ -82,7 +82,7 @@ public class IpcProvider : IHostedService, IMediatorSubscriber
     {
         _charaDataManager.LoadMcdf(path);
         await (_charaDataManager.LoadedMcdfHeader ?? Task.CompletedTask).ConfigureAwait(false);
-        _charaDataManager.McdfApplyToTarget(target.Name.TextValue);
+        //_charaDataManager.McdfApplyToTarget(target.Name.TextValue);
     }
 
     private List<nint> GetHandledAddresses()

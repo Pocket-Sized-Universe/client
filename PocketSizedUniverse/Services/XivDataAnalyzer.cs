@@ -64,92 +64,92 @@ public sealed class XivDataAnalyzer
         return (outputIndices.Count != 0 && outputIndices.Values.All(u => u.Count > 0)) ? outputIndices : null;
     }
 
-    public unsafe Dictionary<string, List<ushort>>? GetBoneIndicesFromPap(string hash)
-    {
-        if (_configService.Current.BonesDictionary.TryGetValue(hash, out var bones)) return bones;
-
-        var cacheEntity = _fileCacheInfoFactory.CreateFromHash(hash);
-        cacheEntity.EnsureTorrentFileAndStart().GetAwaiter().GetResult();
-        var trueFile = cacheEntity.TrueFile;
-        if (trueFile == null) return null;
-
-        using BinaryReader reader = new BinaryReader(File.Open(trueFile.FullName, FileMode.Open, FileAccess.Read, FileShare.Read));
-
-        // most of this shit is from vfxeditor, surely nothing will change in the pap format :copium:
-        reader.ReadInt32(); // ignore
-        reader.ReadInt32(); // ignore
-        reader.ReadInt16(); // read 2 (num animations)
-        reader.ReadInt16(); // read 2 (modelid)
-        var type = reader.ReadByte();// read 1 (type)
-        if (type != 0) return null; // it's not human, just ignore it, whatever
-
-        reader.ReadByte(); // read 1 (variant)
-        reader.ReadInt32(); // ignore
-        var havokPosition = reader.ReadInt32();
-        var footerPosition = reader.ReadInt32();
-        var havokDataSize = footerPosition - havokPosition;
-        reader.BaseStream.Position = havokPosition;
-        var havokData = reader.ReadBytes(havokDataSize);
-        if (havokData.Length <= 8) return null; // no havok data
-
-        var output = new Dictionary<string, List<ushort>>(StringComparer.OrdinalIgnoreCase);
-        var tempHavokDataPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()) + ".hkx";
-        var tempHavokDataPathAnsi = Marshal.StringToHGlobalAnsi(tempHavokDataPath);
-
-        try
-        {
-            File.WriteAllBytes(tempHavokDataPath, havokData);
-
-            var loadoptions = stackalloc hkSerializeUtil.LoadOptions[1];
-            loadoptions->TypeInfoRegistry = hkBuiltinTypeRegistry.Instance()->GetTypeInfoRegistry();
-            loadoptions->ClassNameRegistry = hkBuiltinTypeRegistry.Instance()->GetClassNameRegistry();
-            loadoptions->Flags = new hkFlags<hkSerializeUtil.LoadOptionBits, int>
-            {
-                Storage = (int)(hkSerializeUtil.LoadOptionBits.Default)
-            };
-
-            var resource = hkSerializeUtil.LoadFromFile((byte*)tempHavokDataPathAnsi, null, loadoptions);
-            if (resource == null)
-            {
-                throw new InvalidOperationException("Resource was null after loading");
-            }
-
-            var rootLevelName = @"hkRootLevelContainer"u8;
-            fixed (byte* n1 = rootLevelName)
-            {
-                var container = (hkRootLevelContainer*)resource->GetContentsPointer(n1, hkBuiltinTypeRegistry.Instance()->GetTypeInfoRegistry());
-                var animationName = @"hkaAnimationContainer"u8;
-                fixed (byte* n2 = animationName)
-                {
-                    var animContainer = (hkaAnimationContainer*)container->findObjectByName(n2, null);
-                    for (int i = 0; i < animContainer->Bindings.Length; i++)
-                    {
-                        var binding = animContainer->Bindings[i].ptr;
-                        var boneTransform = binding->TransformTrackToBoneIndices;
-                        string name = binding->OriginalSkeletonName.String! + "_" + i;
-                        output[name] = [];
-                        for (int boneIdx = 0; boneIdx < boneTransform.Length; boneIdx++)
-                        {
-                            output[name].Add((ushort)boneTransform[boneIdx]);
-                        }
-                        output[name].Sort();
-                    }
-
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Could not load havok file in {path}", tempHavokDataPath);
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(tempHavokDataPathAnsi);
-            File.Delete(tempHavokDataPath);
-        }
-
-        _configService.Current.BonesDictionary[hash] = output;
-        _configService.Save();
-        return output;
-    }
+    // public unsafe Dictionary<string, List<ushort>>? GetBoneIndicesFromPap(string hash)
+    // {
+    //     if (_configService.Current.BonesDictionary.TryGetValue(hash, out var bones)) return bones;
+    //
+    //     var cacheEntity = _fileCacheInfoFactory.CreateFromHash(hash);
+    //     cacheEntity.EnsureTorrentFileAndStart().GetAwaiter().GetResult();
+    //     var trueFile = cacheEntity.TrueFile;
+    //     if (trueFile == null) return null;
+    //
+    //     using BinaryReader reader = new BinaryReader(File.Open(trueFile.FullName, FileMode.Open, FileAccess.Read, FileShare.Read));
+    //
+    //     // most of this shit is from vfxeditor, surely nothing will change in the pap format :copium:
+    //     reader.ReadInt32(); // ignore
+    //     reader.ReadInt32(); // ignore
+    //     reader.ReadInt16(); // read 2 (num animations)
+    //     reader.ReadInt16(); // read 2 (modelid)
+    //     var type = reader.ReadByte();// read 1 (type)
+    //     if (type != 0) return null; // it's not human, just ignore it, whatever
+    //
+    //     reader.ReadByte(); // read 1 (variant)
+    //     reader.ReadInt32(); // ignore
+    //     var havokPosition = reader.ReadInt32();
+    //     var footerPosition = reader.ReadInt32();
+    //     var havokDataSize = footerPosition - havokPosition;
+    //     reader.BaseStream.Position = havokPosition;
+    //     var havokData = reader.ReadBytes(havokDataSize);
+    //     if (havokData.Length <= 8) return null; // no havok data
+    //
+    //     var output = new Dictionary<string, List<ushort>>(StringComparer.OrdinalIgnoreCase);
+    //     var tempHavokDataPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()) + ".hkx";
+    //     var tempHavokDataPathAnsi = Marshal.StringToHGlobalAnsi(tempHavokDataPath);
+    //
+    //     try
+    //     {
+    //         File.WriteAllBytes(tempHavokDataPath, havokData);
+    //
+    //         var loadoptions = stackalloc hkSerializeUtil.LoadOptions[1];
+    //         loadoptions->TypeInfoRegistry = hkBuiltinTypeRegistry.Instance()->GetTypeInfoRegistry();
+    //         loadoptions->ClassNameRegistry = hkBuiltinTypeRegistry.Instance()->GetClassNameRegistry();
+    //         loadoptions->Flags = new hkFlags<hkSerializeUtil.LoadOptionBits, int>
+    //         {
+    //             Storage = (int)(hkSerializeUtil.LoadOptionBits.Default)
+    //         };
+    //
+    //         var resource = hkSerializeUtil.LoadFromFile((byte*)tempHavokDataPathAnsi, null, loadoptions);
+    //         if (resource == null)
+    //         {
+    //             throw new InvalidOperationException("Resource was null after loading");
+    //         }
+    //
+    //         var rootLevelName = @"hkRootLevelContainer"u8;
+    //         fixed (byte* n1 = rootLevelName)
+    //         {
+    //             var container = (hkRootLevelContainer*)resource->GetContentsPointer(n1, hkBuiltinTypeRegistry.Instance()->GetTypeInfoRegistry());
+    //             var animationName = @"hkaAnimationContainer"u8;
+    //             fixed (byte* n2 = animationName)
+    //             {
+    //                 var animContainer = (hkaAnimationContainer*)container->findObjectByName(n2, null);
+    //                 for (int i = 0; i < animContainer->Bindings.Length; i++)
+    //                 {
+    //                     var binding = animContainer->Bindings[i].ptr;
+    //                     var boneTransform = binding->TransformTrackToBoneIndices;
+    //                     string name = binding->OriginalSkeletonName.String! + "_" + i;
+    //                     output[name] = [];
+    //                     for (int boneIdx = 0; boneIdx < boneTransform.Length; boneIdx++)
+    //                     {
+    //                         output[name].Add((ushort)boneTransform[boneIdx]);
+    //                     }
+    //                     output[name].Sort();
+    //                 }
+    //
+    //             }
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         _logger.LogWarning(ex, "Could not load havok file in {path}", tempHavokDataPath);
+    //     }
+    //     finally
+    //     {
+    //         Marshal.FreeHGlobal(tempHavokDataPathAnsi);
+    //         File.Delete(tempHavokDataPath);
+    //     }
+    //
+    //     _configService.Current.BonesDictionary[hash] = output;
+    //     _configService.Save();
+    //     return output;
+    // }
 }

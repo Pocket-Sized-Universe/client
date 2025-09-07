@@ -41,8 +41,8 @@ public record MareCharaFileData
         {
             foreach (var swap in fileSwaps)
             {
-                var truePath = fileFactory.CreateFromHash(swap.Hash);
-                _ = truePath.EnsureTorrentFileAndStart().ConfigureAwait(false);
+                var truePath = fileFactory.CreateFromTorrentFileEntry(swap);
+                _ = truePath.ProcessFile().ConfigureAwait(false);
                 var trueFile = truePath.TrueFile;
                 if (trueFile == null) continue;
                 Files.Add(new FileData(swap.GamePath, trueFile.FullName, swap.Hash));
@@ -62,5 +62,5 @@ public record MareCharaFileData
 
     public record FileSwap(string GamePath, string FileSwapPath);
 
-    public record FileData(string GamePath, string TruePath, string Hash);
+    public record FileData(string GamePath, string TruePath, byte[] Hash);
 }

@@ -41,7 +41,8 @@ public class PlayerDataFactory
         _logger.LogTrace("Creating {this}", nameof(PlayerDataFactory));
     }
 
-    public async Task<CharacterDataFragment?> BuildCharacterData(GameObjectHandler playerRelatedObject, CancellationToken token)
+    public async Task<CharacterDataFragment?> BuildCharacterData(GameObjectHandler playerRelatedObject,
+        CancellationToken token)
     {
         if (!_ipcManager.Initialized)
         {
@@ -77,10 +78,11 @@ public class PlayerDataFactory
 
         try
         {
-            return await _performanceCollector.LogPerformance(this, $"CreateCharacterData>{playerRelatedObject.ObjectKind}", async () =>
-            {
-                return await CreateCharacterData(playerRelatedObject, token).ConfigureAwait(false);
-            }).ConfigureAwait(true);
+            return await _performanceCollector.LogPerformance(this,
+                $"CreateCharacterData>{playerRelatedObject.ObjectKind}", async () =>
+                {
+                    return await CreateCharacterData(playerRelatedObject, token).ConfigureAwait(false);
+                }).ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {
@@ -97,7 +99,8 @@ public class PlayerDataFactory
 
     private async Task<bool> CheckForNullDrawObject(IntPtr playerPointer)
     {
-        return await _dalamudUtil.RunOnFrameworkThread(() => CheckForNullDrawObjectUnsafe(playerPointer)).ConfigureAwait(false);
+        return await _dalamudUtil.RunOnFrameworkThread(() => CheckForNullDrawObjectUnsafe(playerPointer))
+            .ConfigureAwait(false);
     }
 
     private unsafe bool CheckForNullDrawObjectUnsafe(IntPtr playerPointer)
@@ -105,7 +108,8 @@ public class PlayerDataFactory
         return ((Character*)playerPointer)->GameObject.DrawObject == null;
     }
 
-    private async Task<CharacterDataFragment> CreateCharacterData(GameObjectHandler playerRelatedObject, CancellationToken ct)
+    private async Task<CharacterDataFragment> CreateCharacterData(GameObjectHandler playerRelatedObject,
+        CancellationToken ct)
     {
         var objectKind = playerRelatedObject.ObjectKind;
         CharacterDataFragment fragment = objectKind == ObjectKind.Player ? new CharacterDataFragmentPlayer() : new();
@@ -113,9 +117,12 @@ public class PlayerDataFactory
         _logger.LogDebug("Building character data for {obj}", playerRelatedObject);
 
         // wait until chara is not drawing and present so nothing spontaneously explodes
-        await _dalamudUtil.WaitWhileCharacterIsDrawing(_logger, playerRelatedObject, Guid.NewGuid(), 30000, ct: ct).ConfigureAwait(false);
+        await _dalamudUtil.WaitWhileCharacterIsDrawing(_logger, playerRelatedObject, Guid.NewGuid(), 30000, ct: ct)
+            .ConfigureAwait(false);
         int totalWaitTime = 10000;
-        while (!await _dalamudUtil.IsObjectPresentAsync(await _dalamudUtil.CreateGameObjectAsync(playerRelatedObject.Address).ConfigureAwait(false)).ConfigureAwait(false) && totalWaitTime > 0)
+        while (!await _dalamudUtil
+                   .IsObjectPresentAsync(await _dalamudUtil.CreateGameObjectAsync(playerRelatedObject.Address)
+                       .ConfigureAwait(false)).ConfigureAwait(false) && totalWaitTime > 0)
         {
             _logger.LogTrace("Character is null but it shouldn't be, waiting");
             await Task.Delay(50, ct).ConfigureAwait(false);
@@ -126,14 +133,17 @@ public class PlayerDataFactory
 
         Dictionary<string, List<ushort>>? boneIndices =
             objectKind != ObjectKind.Player
-            ? null
-            : await _dalamudUtil.RunOnFrameworkThread(() => _modelAnalyzer.GetSkeletonBoneIndices(playerRelatedObject)).ConfigureAwait(false);
+                ? null
+                : await _dalamudUtil
+                    .RunOnFrameworkThread(() => _modelAnalyzer.GetSkeletonBoneIndices(playerRelatedObject))
+                    .ConfigureAwait(false);
 
         DateTime start = DateTime.UtcNow;
 
         Dictionary<string, HashSet<string>>? resolvedPaths;
 
-        resolvedPaths = (await _ipcManager.Penumbra.GetCharacterData(_logger, playerRelatedObject).ConfigureAwait(false));
+        resolvedPaths =
+            (await _ipcManager.Penumbra.GetCharacterData(_logger, playerRelatedObject).ConfigureAwait(false));
         if (resolvedPaths == null) throw new InvalidOperationException("Penumbra returned null data");
 
         ct.ThrowIfCancellationRequested();
@@ -142,18 +152,13 @@ public class PlayerDataFactory
         {
             foreach (var file in path.Value)
             {
-                if (File.Exists(path.Key))
+                var cacheFile = _fileCacheInfoFactory.CreateFromPath(path.Key, file);
+                await cacheFile.ProcessFile().ConfigureAwait(false);
+                ct.ThrowIfCancellationRequested();
+                if (cacheFile.IsFileSwap)
                 {
-                    var hash = path.Key.GetFileHash();
-                    var cacheFile = _fileCacheInfoFactory.CreateFromHash(hash);
-                    ct.ThrowIfCancellationRequested();
-                    await cacheFile.EnsureTorrentFileAndStart().ConfigureAwait(false);
-                    if (cacheFile.TorrentFile == null)
-                    {
-                        await cacheFile.CopyFileToCache(path.Key).ConfigureAwait(false);
-                    }
-                    await cacheFile.EnsureTorrentFileAndStart().ConfigureAwait(false);
-                    TorrentFileEntry torrentFile = new(cacheFile.Hash, file, cacheFile.TorrentFile!);
+
+                    TorrentFileEntry torrentFile = new(cacheFile.Hash!, file, cacheFile.TorrentFile!);
                     fragment.FileSwaps.Add(torrentFile);
                 }
                 else
@@ -167,7 +172,8 @@ public class PlayerDataFactory
         ct.ThrowIfCancellationRequested();
 
         _logger.LogDebug("== Static Replacements ==");
-        foreach (var replacement in fragment.FileReplacements.OrderBy(i => i.GamePath, StringComparer.OrdinalIgnoreCase))
+        foreach (var replacement in
+                 fragment.FileReplacements.OrderBy(i => i.GamePath, StringComparer.OrdinalIgnoreCase))
         {
             _logger.LogDebug("=> {repl}", replacement);
             ct.ThrowIfCancellationRequested();
@@ -189,7 +195,8 @@ public class PlayerDataFactory
 
         // gather up data from ipc
         Task<string> getHeelsOffset = _ipcManager.Heels.GetOffsetAsync();
-        Task<string> getGlamourerData = _ipcManager.Glamourer.GetCharacterCustomizationAsync(playerRelatedObject.Address);
+        Task<string> getGlamourerData =
+            _ipcManager.Glamourer.GetCharacterCustomizationAsync(playerRelatedObject.Address);
         Task<string?> getCustomizeData = _ipcManager.CustomizePlus.GetScaleAsync(playerRelatedObject.Address);
         Task<string> getHonorificTitle = _ipcManager.Honorific.GetTitle();
         fragment.GlamourerString = await getGlamourerData.ConfigureAwait(false);
@@ -220,97 +227,107 @@ public class PlayerDataFactory
 
         ct.ThrowIfCancellationRequested();
 
-        if (objectKind == ObjectKind.Player)
-        {
-            try
-            {
-                await VerifyPlayerAnimationBones(boneIndices, (fragment as CharacterDataFragmentPlayer)!, ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException e)
-            {
-                _logger.LogDebug(e, "Cancelled during player animation verification");
-                throw;
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning(e, "Failed to verify player animations, continuing without further verification");
-            }
-        }
+        // if (objectKind == ObjectKind.Player)
+        // {
+        //     try
+        //     {
+        //         await VerifyPlayerAnimationBones(boneIndices, (fragment as CharacterDataFragmentPlayer)!, ct)
+        //             .ConfigureAwait(false);
+        //     }
+        //     catch (OperationCanceledException e)
+        //     {
+        //         _logger.LogDebug(e, "Cancelled during player animation verification");
+        //         throw;
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         _logger.LogWarning(e, "Failed to verify player animations, continuing without further verification");
+        //     }
+        // }
 
-        _logger.LogInformation("Building character data for {obj} took {time}ms", objectKind, TimeSpan.FromTicks(DateTime.UtcNow.Ticks - start.Ticks).TotalMilliseconds);
+        _logger.LogInformation("Building character data for {obj} took {time}ms", objectKind,
+            TimeSpan.FromTicks(DateTime.UtcNow.Ticks - start.Ticks).TotalMilliseconds);
 
         return fragment;
     }
 
-    private async Task VerifyPlayerAnimationBones(Dictionary<string, List<ushort>>? boneIndices, CharacterDataFragmentPlayer fragment, CancellationToken ct)
-    {
-        if (boneIndices == null) return;
+    // private async Task VerifyPlayerAnimationBones(Dictionary<string, List<ushort>>? boneIndices,
+    //     CharacterDataFragmentPlayer fragment, CancellationToken ct)
+    // {
+    //     if (boneIndices == null) return;
+    //
+    //     foreach (var kvp in boneIndices)
+    //     {
+    //         _logger.LogDebug("Found {skellyname} ({idx} bone indices) on player: {bones}", kvp.Key,
+    //             kvp.Value.Any() ? kvp.Value.Max() : 0, string.Join(',', kvp.Value));
+    //     }
+    //
+    //     if (boneIndices.All(u => u.Value.Count == 0)) return;
+    //
+    //     int noValidationFailed = 0;
+    //     foreach (var file in fragment.FileSwaps
+    //                  .Where(f => f.GamePath.EndsWith("pap", StringComparison.OrdinalIgnoreCase)).ToList())
+    //     {
+    //         ct.ThrowIfCancellationRequested();
+    //         var fileCache = _fileCacheInfoFactory.CreateFromTorrentFileEntry(file);
+    //         await fileCache.ProcessFile().ConfigureAwait(false);
+    //         var fileInfo = fileCache.TrueFile;
+    //         if (fileInfo == null) continue;
+    //
+    //         var skeletonIndices = await _dalamudUtil
+    //             .RunOnFrameworkThread(() => _modelAnalyzer.GetBoneIndicesFromPap(file.Hash)).ConfigureAwait(false);
+    //         bool validationFailed = false;
+    //         if (skeletonIndices != null)
+    //         {
+    //             // 105 is the maximum vanilla skellington spoopy bone index
+    //             if (skeletonIndices.All(k => k.Value.Max() <= 105))
+    //             {
+    //                 _logger.LogTrace("All indices of {path} are <= 105, ignoring", fileInfo.FullName);
+    //                 continue;
+    //             }
+    //
+    //             _logger.LogDebug("Verifying bone indices for {path}, found {x} skeletons", fileInfo.FullName,
+    //                 skeletonIndices.Count);
+    //
+    //             foreach (var boneCount in skeletonIndices.Select(k => k).ToList())
+    //             {
+    //                 if (boneCount.Value.Max() > boneIndices.SelectMany(b => b.Value).Max())
+    //                 {
+    //                     _logger.LogWarning(
+    //                         "Found more bone indices on the animation {path} skeleton {skl} (max indice {idx}) than on any player related skeleton (max indice {idx2})",
+    //                         fileInfo.FullName, boneCount.Key, boneCount.Value.Max(),
+    //                         boneIndices.SelectMany(b => b.Value).Max());
+    //                     validationFailed = true;
+    //                     break;
+    //                 }
+    //             }
+    //         }
+    //
+    //         if (validationFailed)
+    //         {
+    //             noValidationFailed++;
+    //             _logger.LogDebug("Removing {file} from sent file replacements and transient data", fileInfo.FullName);
+    //             fragment.FileSwaps.Remove(file);
+    //         }
+    //     }
+    //
+    //     if (noValidationFailed > 0)
+    //     {
+    //         _mareMediator.Publish(new NotificationMessage("Invalid Skeleton Setup",
+    //             $"Your client is attempting to send {noValidationFailed} animation files with invalid bone data. Those animation files have been removed from your sent data. " +
+    //             $"Verify that you are using the correct skeleton for those animation files (Check /xllog for more information).",
+    //             NotificationType.Warning, TimeSpan.FromSeconds(10)));
+    //     }
+    // }
 
-        foreach (var kvp in boneIndices)
-        {
-            _logger.LogDebug("Found {skellyname} ({idx} bone indices) on player: {bones}", kvp.Key, kvp.Value.Any() ? kvp.Value.Max() : 0, string.Join(',', kvp.Value));
-        }
-
-        if (boneIndices.All(u => u.Value.Count == 0)) return;
-
-        int noValidationFailed = 0;
-        foreach (var file in fragment.FileSwaps.Where(f => f.GamePath.EndsWith("pap", StringComparison.OrdinalIgnoreCase)).ToList())
-        {
-            ct.ThrowIfCancellationRequested();
-            var fileCache = _fileCacheInfoFactory.CreateFromHash(file.Hash);
-            await fileCache.EnsureTorrentFileAndStart().ConfigureAwait(false);
-            var fileInfo = fileCache.TrueFile;
-            if (fileInfo == null) continue;
-
-            var skeletonIndices = await _dalamudUtil.RunOnFrameworkThread(() => _modelAnalyzer.GetBoneIndicesFromPap(file.Hash)).ConfigureAwait(false);
-            bool validationFailed = false;
-            if (skeletonIndices != null)
-            {
-                // 105 is the maximum vanilla skellington spoopy bone index
-                if (skeletonIndices.All(k => k.Value.Max() <= 105))
-                {
-                    _logger.LogTrace("All indices of {path} are <= 105, ignoring", fileInfo.FullName);
-                    continue;
-                }
-
-                _logger.LogDebug("Verifying bone indices for {path}, found {x} skeletons", fileInfo.FullName, skeletonIndices.Count);
-
-                foreach (var boneCount in skeletonIndices.Select(k => k).ToList())
-                {
-                    if (boneCount.Value.Max() > boneIndices.SelectMany(b => b.Value).Max())
-                    {
-                        _logger.LogWarning("Found more bone indices on the animation {path} skeleton {skl} (max indice {idx}) than on any player related skeleton (max indice {idx2})",
-                            fileInfo.FullName, boneCount.Key, boneCount.Value.Max(), boneIndices.SelectMany(b => b.Value).Max());
-                        validationFailed = true;
-                        break;
-                    }
-                }
-            }
-
-            if (validationFailed)
-            {
-                noValidationFailed++;
-                _logger.LogDebug("Removing {file} from sent file replacements and transient data", fileInfo.FullName);
-                fragment.FileSwaps.Remove(file);
-            }
-
-        }
-
-        if (noValidationFailed > 0)
-        {
-            _mareMediator.Publish(new NotificationMessage("Invalid Skeleton Setup",
-                $"Your client is attempting to send {noValidationFailed} animation files with invalid bone data. Those animation files have been removed from your sent data. " +
-                $"Verify that you are using the correct skeleton for those animation files (Check /xllog for more information).",
-                NotificationType.Warning, TimeSpan.FromSeconds(10)));
-        }
-    }
-
-    private async Task<IReadOnlyDictionary<string, string[]>> GetFileReplacementsFromPaths(HashSet<string> forwardResolve, HashSet<string> reverseResolve)
+    private async Task<IReadOnlyDictionary<string, string[]>> GetFileReplacementsFromPaths(
+        HashSet<string> forwardResolve, HashSet<string> reverseResolve)
     {
         var forwardPaths = forwardResolve.ToArray();
         var reversePaths = reverseResolve.ToArray();
         Dictionary<string, List<string>> resolvedPaths = new(StringComparer.Ordinal);
-        var (forward, reverse) = await _ipcManager.Penumbra.ResolvePathsAsync(forwardPaths, reversePaths).ConfigureAwait(false);
+        var (forward, reverse) =
+            await _ipcManager.Penumbra.ResolvePathsAsync(forwardPaths, reversePaths).ConfigureAwait(false);
         for (int i = 0; i < forwardPaths.Length; i++)
         {
             var filePath = forward[i].ToLowerInvariant();
@@ -337,6 +354,7 @@ public class PlayerDataFactory
             }
         }
 
-        return resolvedPaths.ToDictionary(k => k.Key, k => k.Value.ToArray(), StringComparer.OrdinalIgnoreCase).AsReadOnly();
+        return resolvedPaths.ToDictionary(k => k.Key, k => k.Value.ToArray(), StringComparer.OrdinalIgnoreCase)
+            .AsReadOnly();
     }
 }

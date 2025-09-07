@@ -447,7 +447,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         Dictionary<ObjectKind, HashSet<PlayerChanges>> updatedData,
         bool updateModdedPaths, bool updateManip, CancellationToken downloadToken)
     {
-        Dictionary<(string GamePath, string? Hash), string> moddedPaths = [];
+        Dictionary<(string GamePath, byte[] Hash), string> moddedPaths = [];
 
         if (updateModdedPaths)
         {
@@ -473,8 +473,8 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                 foreach (var file in toDownloadReplacements)
                 {
                     Logger.LogDebug("[BASE-{appBase}] Downloading {file}", applicationBase, file);
-                    var fileCache = _fileCacheInfoFactory.CreateFromHash(file.Hash);
-                    await fileCache.EnsureTorrentFileAndStart().ConfigureAwait(false);
+                    var fileCache = _fileCacheInfoFactory.CreateFromTorrentFileEntry(file);
+                    await fileCache.ProcessFile().ConfigureAwait(false);
                 }
 
 
@@ -516,7 +516,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
 
     private async Task ApplyCharacterDataAsync(Guid applicationBase, CharacterData charaData,
         Dictionary<ObjectKind, HashSet<PlayerChanges>> updatedData, bool updateModdedPaths, bool updateManip,
-        Dictionary<(string GamePath, string? Hash), string> moddedPaths, CancellationToken token)
+        Dictionary<(string GamePath, byte[] Hash), string> moddedPaths, CancellationToken token)
     {
         try
         {
@@ -745,12 +745,12 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
     }
 
     private List<TorrentFileEntry> TryCalculateModdedDictionary(Guid applicationBase, CharacterData charaData,
-        out Dictionary<(string GamePath, string? Hash), string> moddedDictionary, CancellationToken token)
+        out Dictionary<(string GamePath, byte[] Hash), string> moddedDictionary, CancellationToken token)
     {
         Stopwatch st = Stopwatch.StartNew();
         List<TorrentFileEntry> missingFiles = [];
         moddedDictionary = [];
-        ConcurrentDictionary<(string GamePath, string? Hash), string> outputDict = new();
+        ConcurrentDictionary<(string GamePath, byte[] Hash), string> outputDict = new();
 
         try
         {
@@ -760,8 +760,7 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                 (item) =>
                 {
                     token.ThrowIfCancellationRequested();
-                    var fileCache = _fileCacheInfoFactory.CreateFromHash(item.Hash);
-                    fileCache.EnsureTorrentFileAndStart().GetAwaiter().GetResult();
+                    var fileCache = _fileCacheInfoFactory.CreateFromTorrentFileEntry(item);
                     var trueFile = fileCache.TrueFile;
                     if (trueFile != null)
                     {

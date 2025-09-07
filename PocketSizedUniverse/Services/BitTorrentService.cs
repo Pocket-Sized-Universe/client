@@ -102,16 +102,9 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         await manager.HashCheckAsync(true).ConfigureAwait(false);
     }
 
-    public TorrentManager? GetTorrentManagerByTorrentFile(TorrentFileDto? torrentFileDto)
-    {
-        if (torrentFileDto == null) return null;
-        return _clientEngine.Torrents.FirstOrDefault(t => string.Equals(t.Name, torrentFileDto.Filename, StringComparison.Ordinal));
-    }
-
-    public async Task<TorrentFileDto> CreateAndSeedNewTorrent(string cachePath)
+    public async Task<TorrentFileDto> CreateAndSeedNewTorrent(string cachePath, byte[] hash)
     {
         var fileInfo = new FileInfo(cachePath);
-        var hash = cachePath.GetFileHash();
         var extension = Path.GetExtension(cachePath);
         var creator = new TorrentCreator()
         {

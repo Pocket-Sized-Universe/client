@@ -478,62 +478,62 @@ public sealed partial class CharaDataManager : DisposableMediatorSubscriberBase
         LoadedMcdfHeader = _fileHandler.LoadCharaFileHeader(filePath);
     }
 
-    public void McdfApplyToTarget(string charaName)
-    {
-        if (LoadedMcdfHeader == null || !LoadedMcdfHeader.IsCompletedSuccessfully) return;
-
-        List<string> actuallyExtractedFiles = [];
-
-        UiBlockingComputation = McdfApplicationTask = Task.Run(async () =>
-        {
-            Guid applicationId = Guid.NewGuid();
-            try
-            {
-                using GameObjectHandler? tempHandler =
-                    await _characterHandler.TryCreateGameObjectHandler(charaName, true).ConfigureAwait(false);
-                if (tempHandler == null) return;
-                var playerChar = await _dalamudUtilService.GetPlayerCharacterAsync().ConfigureAwait(false);
-                bool isSelf = playerChar != null &&
-                              string.Equals(playerChar.Name.TextValue, tempHandler.Name, StringComparison.Ordinal);
-
-                long expectedExtractedSize = LoadedMcdfHeader.Result.ExpectedLength;
-                var charaFile = LoadedMcdfHeader.Result.LoadedFile;
-                DataApplicationProgress = "Extracting MCDF data";
-
-                var extractedFiles =
-                    _fileHandler.McdfExtractFiles(charaFile, expectedExtractedSize, actuallyExtractedFiles);
-
-                DataApplicationProgress = "Applying MCDF data";
-
-                var extended = await CharaDataMetaInfoExtendedDto
-                    .Create(new(charaFile.FilePath, new UserData(string.Empty)), _dalamudUtilService)
-                    .ConfigureAwait(false);
-                await ApplyDataAsync(applicationId, tempHandler, isSelf, autoRevert: false, extended,
-                    extractedFiles, charaFile.CharaFileData.ManipulationData, charaFile.CharaFileData.GlamourerData,
-                    charaFile.CharaFileData.CustomizePlusData, CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning(ex, "Failed to extract MCDF");
-                throw;
-            }
-            finally
-            {
-                // delete extracted files
-                foreach (var file in actuallyExtractedFiles)
-                {
-                    File.Delete(file);
-                }
-            }
-        });
-    }
+    // public void McdfApplyToTarget(string charaName)
+    // {
+    //     if (LoadedMcdfHeader == null || !LoadedMcdfHeader.IsCompletedSuccessfully) return;
+    //
+    //     List<string> actuallyExtractedFiles = [];
+    //
+    //     UiBlockingComputation = McdfApplicationTask = Task.Run(async () =>
+    //     {
+    //         Guid applicationId = Guid.NewGuid();
+    //         try
+    //         {
+    //             using GameObjectHandler? tempHandler =
+    //                 await _characterHandler.TryCreateGameObjectHandler(charaName, true).ConfigureAwait(false);
+    //             if (tempHandler == null) return;
+    //             var playerChar = await _dalamudUtilService.GetPlayerCharacterAsync().ConfigureAwait(false);
+    //             bool isSelf = playerChar != null &&
+    //                           string.Equals(playerChar.Name.TextValue, tempHandler.Name, StringComparison.Ordinal);
+    //
+    //             long expectedExtractedSize = LoadedMcdfHeader.Result.ExpectedLength;
+    //             var charaFile = LoadedMcdfHeader.Result.LoadedFile;
+    //             DataApplicationProgress = "Extracting MCDF data";
+    //
+    //             var extractedFiles =
+    //                 _fileHandler.McdfExtractFiles(charaFile, expectedExtractedSize, actuallyExtractedFiles);
+    //
+    //             DataApplicationProgress = "Applying MCDF data";
+    //
+    //             var extended = await CharaDataMetaInfoExtendedDto
+    //                 .Create(new(charaFile.FilePath, new UserData(string.Empty)), _dalamudUtilService)
+    //                 .ConfigureAwait(false);
+    //             await ApplyDataAsync(applicationId, tempHandler, isSelf, autoRevert: false, extended,
+    //                 extractedFiles, charaFile.CharaFileData.ManipulationData, charaFile.CharaFileData.GlamourerData,
+    //                 charaFile.CharaFileData.CustomizePlusData, CancellationToken.None).ConfigureAwait(false);
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             Logger.LogWarning(ex, "Failed to extract MCDF");
+    //             throw;
+    //         }
+    //         finally
+    //         {
+    //             // delete extracted files
+    //             foreach (var file in actuallyExtractedFiles)
+    //             {
+    //                 File.Delete(file);
+    //             }
+    //         }
+    //     });
+    // }
 
     public async Task McdfApplyToGposeTarget()
     {
         var apply = await CanApplyInGpose().ConfigureAwait(false);
         if (apply.CanApply)
         {
-            McdfApplyToTarget(apply.TargetName);
+            //McdfApplyToTarget(apply.TargetName);
         }
     }
 

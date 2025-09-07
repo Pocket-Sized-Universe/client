@@ -47,15 +47,14 @@ public sealed class CharaDataFileHandler : IDisposable
 
         foreach (var file in charaDataDownloadDto.FileSwaps)
         {
-            var localCache = _fileCacheInfoFactory.CreateFromHash(file.Hash);
-            localCache.EnsureTorrentFileAndStart().ConfigureAwait(false).GetAwaiter().GetResult();
+            var localCache = _fileCacheInfoFactory.CreateFromTorrentFileEntry(file);
+            localCache.ProcessFile().GetAwaiter().GetResult();
             var localCacheFile = localCache.TrueFile;
             if (localCacheFile == null)
             {
-                var existingFile = missingFiles.Find(f => string.Equals(f.Hash, file.Hash, StringComparison.Ordinal));
-                if (existingFile == null)
+                if (localCache.TorrentFile != null)
                 {
-                    missingFiles.Add(file);
+                    missingFiles.Add(new TorrentFileEntry(file.Hash, file.GamePath, localCache.TorrentFile));
                 }
             }
             else
@@ -64,10 +63,10 @@ public sealed class CharaDataFileHandler : IDisposable
             }
         }
 
-        foreach (var swap in charaDataDownloadDto.FileRedirects)
-        {
-            modPaths[swap.GamePath] = swap.SwapPath;
-        }
+        // foreach (var swap in charaDataDownloadDto.FileRedirects)
+        // {
+        //     modPaths[swap.GamePath] = swap.SwapPath;
+        // }
 
         _logger.LogInformation(
             "[ComputeMissingFiles] Summary: {missingCount} missing files, {modPathCount} existing mod paths, {swapCount} file swaps",
@@ -112,16 +111,16 @@ public sealed class CharaDataFileHandler : IDisposable
         // Log details of missing files and their magnet links
         foreach (var file in missingFiles)
         {
-            var cacheInfo = _fileCacheInfoFactory.CreateFromHash(file.Hash);
-            await cacheInfo.EnsureTorrentFileAndStart().ConfigureAwait(false);
+            var cacheInfo = _fileCacheInfoFactory.CreateFromTorrentFileEntry(file);
+            await cacheInfo.ProcessFile().ConfigureAwait(false);
         }
 
         _logger.LogInformation("[DownloadFilesAsync] Download phase completed, checking for locally cached files...");
         token.ThrowIfCancellationRequested();
         foreach (var file in missingFiles)
         {
-            var localFileCache = _fileCacheInfoFactory.CreateFromHash(file.Hash);
-            await localFileCache.EnsureTorrentFileAndStart().ConfigureAwait(false);
+            var localFileCache = _fileCacheInfoFactory.CreateFromTorrentFileEntry(file);
+            await localFileCache.ProcessFile().ConfigureAwait(false);
             var localFile = localFileCache.TrueFile;
             if (localFile == null)
             {
@@ -133,7 +132,7 @@ public sealed class CharaDataFileHandler : IDisposable
             else
             {
                 _logger.LogDebug("[DownloadFilesAsync] Found local file for {hash}: {path}", file.Hash, localFile);
-                modPaths[file.Hash] = localFile.FullName;
+                modPaths[file.GamePath] = localFile.FullName;
             }
         }
 
@@ -270,8 +269,8 @@ public sealed class CharaDataFileHandler : IDisposable
 
             foreach (var item in output.CharaFileData.Files)
             {
-                var fileCache = _fileCacheInfoFactory.CreateFromHash(item.Hash);
-                await fileCache.EnsureTorrentFileAndStart().ConfigureAwait(false);
+                var fileCache = _fileCacheInfoFactory.CreateFromPath(item.TruePath, item.GamePath);
+                await fileCache.ProcessFile().ConfigureAwait(false);
                 var file = fileCache.TrueFile;
                 if (file == null)
                     continue;
