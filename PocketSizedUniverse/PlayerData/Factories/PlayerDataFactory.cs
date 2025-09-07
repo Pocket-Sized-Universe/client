@@ -150,18 +150,28 @@ public class PlayerDataFactory
 
         foreach (var path in resolvedPaths)
         {
-            foreach (var file in path.Value)
+            _logger.LogInformation("Found {count} files for {path}", path.Value.Count, path.Key);
+            if (File.Exists(Path.Combine(_ipcManager.Penumbra.ModDirectory, path.Key)))
             {
-                var cacheFile = _fileCacheInfoFactory.CreateFromPath(path.Key, file);
-                await cacheFile.ProcessFile().ConfigureAwait(false);
-                ct.ThrowIfCancellationRequested();
-                if (cacheFile.IsFileSwap)
+                foreach (var file in path.Value)
                 {
+                    _logger.LogInformation("Found {file}", file);
+                    ct.ThrowIfCancellationRequested();
+                    if (string.Equals(file, path.Key, StringComparison.OrdinalIgnoreCase)) continue;
+                    var cacheFile = _fileCacheInfoFactory.CreateFromPath(file, path.Key);
+                    await cacheFile.ProcessFile().ConfigureAwait(false);
+                    ct.ThrowIfCancellationRequested();
+                    if (cacheFile.IsFileSwap)
+                    {
 
-                    TorrentFileEntry torrentFile = new(cacheFile.Hash!, file, cacheFile.TorrentFile!);
-                    fragment.FileSwaps.Add(torrentFile);
+                        TorrentFileEntry torrentFile = new(cacheFile.Hash!, file, cacheFile.TorrentFile!);
+                        fragment.FileSwaps.Add(torrentFile);
+                    }
                 }
-                else
+            }
+            else
+            {
+                foreach (var file in path.Value)
                 {
                     FileRedirectEntry redirectEntry = new FileRedirectEntry(path.Key, file);
                     fragment.FileReplacements.Add(redirectEntry);
