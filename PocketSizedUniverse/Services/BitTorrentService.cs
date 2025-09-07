@@ -41,6 +41,13 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         _logger = logger;
         _mediator = mediator;
         _configService = configService;
+
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Starting BitTorrent service");
+
         var settings = new EngineSettingsBuilder()
         {
             CacheDirectory = CacheDirectory,
@@ -55,17 +62,10 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
             },
             DhtEndPoint = new IPEndPoint(IPAddress.Any, 42070),
         };
-
-        _clientEngine = new ClientEngine(settings.ToSettings());
-    }
-
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Starting BitTorrent service");
-
         Directory.CreateDirectory(TorrentsDirectory);
         Directory.CreateDirectory(FilesDirectory);
         Directory.CreateDirectory(CacheDirectory);
+        _clientEngine = new ClientEngine(settings.ToSettings());
         await _clientEngine.StartAllAsync().ConfigureAwait(false);
         _logger.LogInformation("Engine listening on {endpoint}",
             string.Join(',', _clientEngine.Settings.ListenEndPoints.Select(l => l.Value.ToString())));
