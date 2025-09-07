@@ -42,10 +42,32 @@ public record MareCharaFileData
             foreach (var swap in fileSwaps)
             {
                 var truePath = fileFactory.CreateFromTorrentFileEntry(swap);
-                _ = truePath.ProcessFile().ConfigureAwait(false);
-                var trueFile = truePath.TrueFile;
-                if (trueFile == null) continue;
-                Files.Add(new FileData(swap.GamePath, trueFile.FullName, swap.Hash));
+                try
+                {
+                    // Process files in background - this constructor pattern needs refactoring for proper async
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await truePath.ProcessFile().ConfigureAwait(false);
+                            var trueFile = truePath.TrueFile;
+                            if (trueFile != null)
+                            {
+                                Files.Add(new FileData(swap.GamePath, trueFile.FullName, swap.Hash));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log error but don't fail construction
+                            Console.WriteLine($"Warning: Failed to process file {swap.GamePath}: {ex.Message}");
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // Log error but continue with other files
+                    Console.WriteLine($"Warning: Failed to initiate file processing for {swap.GamePath}: {ex.Message}");
+                }
             }
         }
     }

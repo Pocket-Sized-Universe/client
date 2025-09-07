@@ -196,11 +196,24 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     {
         if (!_allClientPairs.TryGetValue(dto.User, out var pair)) throw new InvalidOperationException("No user found for " + dto.User);
         Mediator.Publish(new EventMessage(new Event(pair.UserData, nameof(PairManager), EventSeverity.Informational, "Received Character Data")));
-        foreach (var torrent in  dto.CharaData.FileSwaps.SelectMany(v => v.Value).Select(t => t.TorrentFile))
+        
+        // Process files asynchronously without blocking the mediator
+        foreach (var torrent in dto.CharaData.FileSwaps.SelectMany(v => v.Value).Select(t => t.TorrentFile))
         {
             var fileCache = _fileCacheInfoFactory.CreateFromTorrentFileDto(torrent);
-            fileCache.ProcessFile().GetAwaiter().GetResult();
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await fileCache.ProcessFile().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to process file for torrent {torrent}", torrent);
+                }
+            });
         }
+        
         _allClientPairs[dto.User].ApplyData(dto);
     }
 

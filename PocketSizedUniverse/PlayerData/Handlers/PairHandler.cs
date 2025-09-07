@@ -58,8 +58,18 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         _lifetime = lifetime;
         _serverConfigManager = serverConfigManager;
         _fileCacheInfoFactory = fileCacheInfoFactory;
-        _penumbraCollection = _ipcManager.Penumbra.CreateTemporaryCollectionAsync(logger, Pair.UserData.UID)
-            .ConfigureAwait(false).GetAwaiter().GetResult();
+        // Initialize penumbra collection asynchronously
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                _penumbraCollection = await _ipcManager.Penumbra.CreateTemporaryCollectionAsync(logger, Pair.UserData.UID).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to create temporary Penumbra collection for {uid}", Pair.UserData.UID);
+            }
+        });
 
         Mediator.Subscribe<FrameworkUpdateMessage>(this, (_) => FrameworkUpdate());
         Mediator.Subscribe<ZoneSwitchStartMessage>(this, (_) =>
@@ -70,8 +80,9 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
         });
         Mediator.Subscribe<PenumbraInitializedMessage>(this, (_) =>
         {
-            _penumbraCollection = _ipcManager.Penumbra.CreateTemporaryCollectionAsync(logger, Pair.UserData.UID)
-                .ConfigureAwait(false).GetAwaiter().GetResult();
+
+            _penumbraCollection = _ipcManager.Penumbra.CreateTemporaryCollectionAsync(logger, Pair.UserData.UID).ConfigureAwait(false).GetAwaiter().GetResult();
+
             if (!IsVisible && _charaHandler != null)
             {
                 PlayerName = string.Empty;
@@ -265,13 +276,33 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                     Pair.UserPair);
                 Logger.LogDebug("[{applicationId}] Removing Temp Collection for {name} ({user})", applicationId, name,
                     Pair.UserPair);
-                _ipcManager.Penumbra.RemoveTemporaryCollectionAsync(Logger, applicationId, _penumbraCollection)
-                    .GetAwaiter().GetResult();
+                // Clean up penumbra collection asynchronously
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _ipcManager.Penumbra.RemoveTemporaryCollectionAsync(Logger, applicationId, _penumbraCollection).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning(ex, "Failed to remove temporary Penumbra collection during dispose");
+                    }
+                });
                 if (!IsVisible)
                 {
                     Logger.LogDebug("[{applicationId}] Restoring Glamourer for {name} ({user})", applicationId, name,
                         Pair.UserPair);
-                    _ipcManager.Glamourer.RevertByNameAsync(Logger, name, applicationId).GetAwaiter().GetResult();
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _ipcManager.Glamourer.RevertByNameAsync(Logger, name, applicationId).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogWarning(ex, "Failed to revert Glamourer for {name} during dispose", name);
+                        }
+                    });
                 }
                 else
                 {
@@ -284,30 +315,40 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                     foreach (KeyValuePair<ObjectKind, List<FileRedirectEntry>> item in _cachedData?.FileReplacements ??
                              [])
                     {
-                        try
+                        _ = Task.Run(async () =>
                         {
-                            RevertCustomizationDataAsync(item.Key, name, applicationId, cts.Token).GetAwaiter()
-                                .GetResult();
-                        }
-                        catch (InvalidOperationException ex)
-                        {
-                            Logger.LogWarning(ex, "Failed disposing player (not present anymore?)");
-                            break;
-                        }
+                            try
+                            {
+                                await RevertCustomizationDataAsync(item.Key, name, applicationId, cts.Token).ConfigureAwait(false);
+                            }
+                            catch (InvalidOperationException ex)
+                            {
+                                Logger.LogWarning(ex, "Failed disposing player (not present anymore?)");
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogWarning(ex, "Error reverting customization data during dispose");
+                            }
+                        });
                     }
 
                     foreach (var item in _cachedData?.FileSwaps ?? [])
                     {
-                        try
+                        _ = Task.Run(async () =>
                         {
-                            RevertCustomizationDataAsync(item.Key, name, applicationId, cts.Token).GetAwaiter()
-                                .GetResult();
-                        }
-                        catch (InvalidOperationException ex)
-                        {
-                            Logger.LogWarning(ex, "Failed disposing player (not present anymore?)");
-                            break;
-                        }
+                            try
+                            {
+                                await RevertCustomizationDataAsync(item.Key, name, applicationId, cts.Token).ConfigureAwait(false);
+                            }
+                            catch (InvalidOperationException ex)
+                            {
+                                Logger.LogWarning(ex, "Failed disposing player (not present anymore?)");
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.LogWarning(ex, "Error reverting file swaps during dispose");
+                            }
+                        });
                     }
                 }
             }
@@ -633,9 +674,20 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
     private void Initialize(string name)
     {
         PlayerName = name;
-        _charaHandler = _gameObjectHandlerFactory
-            .Create(ObjectKind.Player, () => _dalamudUtil.GetPlayerCharacterFromCachedTableByIdent(Pair.Ident),
-                isWatched: false).GetAwaiter().GetResult();
+        // Create character handler asynchronously
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                _charaHandler = await _gameObjectHandlerFactory
+                    .Create(ObjectKind.Player, () => _dalamudUtil.GetPlayerCharacterFromCachedTableByIdent(Pair.Ident),
+                        isWatched: false).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to create character handler for {name}", name);
+            }
+        });
 
         _serverConfigManager.AutoPopulateNoteForUid(Pair.UserData.UID, name);
 
@@ -653,9 +705,23 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             await _ipcManager.PetNames.SetPlayerData(PlayerCharacter, _cachedData.PetNamesData).ConfigureAwait(false);
         });
 
-        _ipcManager.Penumbra
-            .AssignTemporaryCollectionAsync(Logger, _penumbraCollection, _charaHandler.GetGameObject()!.ObjectIndex)
-            .GetAwaiter().GetResult();
+        // Assign collection asynchronously
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (_charaHandler?.GetGameObject() != null)
+                {
+                    await _ipcManager.Penumbra
+                        .AssignTemporaryCollectionAsync(Logger, _penumbraCollection, _charaHandler.GetGameObject()!.ObjectIndex)
+                        .ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to assign temporary collection for {name}", name);
+            }
+        });
     }
 
     private async Task RevertCustomizationDataAsync(ObjectKind objectKind, string name, Guid applicationId,
@@ -761,13 +827,23 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                 {
                     token.ThrowIfCancellationRequested();
                     var fileCache = _fileCacheInfoFactory.CreateFromTorrentFileEntry(item);
-                    var trueFile = fileCache.TrueFile;
-                    if (trueFile != null)
+                    // Process file synchronously in this context since we're already in Parallel.ForEach
+                    try
                     {
-                        outputDict[(item.GamePath, item.Hash)] = trueFile.FullName;
+                        fileCache.ProcessFile().ConfigureAwait(false).GetAwaiter().GetResult();
+                        var trueFile = fileCache.TrueFile;
+                        if (trueFile != null)
+                        {
+                            outputDict[(item.GamePath, item.Hash)] = trueFile.FullName;
+                        }
+                        else
+                        {
+                            missingFiles.Add(item);
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
+                        Logger.LogWarning(ex, "Failed to process file cache for {gamePath}", item.GamePath);
                         missingFiles.Add(item);
                     }
                 });

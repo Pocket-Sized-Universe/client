@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using MonoTorrent.Client;
 using PocketSizedUniverse.API.Dto.CharaData;
 using PocketSizedUniverse.API.Dto.Files;
@@ -13,40 +14,47 @@ namespace PocketSizedUniverse.Services.CharaData.Models
         private readonly BitTorrentService _bitTorrentService;
         private readonly ApiController _apiController;
         private readonly IpcCallerPenumbra _ipcCallerPenumbra;
-        
-        public FileCacheInfo(string path, string gamePath, BitTorrentService bitTorrentService, ApiController apiController, IpcCallerPenumbra ipcCallerPenumbra)
+        private readonly ILogger<FileCacheInfo> _logger;
+
+        public FileCacheInfo(string path, string gamePath, BitTorrentService bitTorrentService,
+            ApiController apiController, IpcCallerPenumbra ipcCallerPenumbra, ILogger<FileCacheInfo> logger)
         {
+            _logger = logger;
             _bitTorrentService = bitTorrentService;
             _apiController = apiController;
             _ipcCallerPenumbra = ipcCallerPenumbra;
             GamePath = gamePath;
             Extension = System.IO.Path.GetExtension(path);
-            if (_ipcCallerPenumbra.ModDirectory != null && path.Contains(_ipcCallerPenumbra.ModDirectory) && File.Exists(path))
+            if (File.Exists(path))
             {
                 IsFileSwap = true;
                 var bytes = File.ReadAllBytes(path);
                 Hash = SHA256.Create().ComputeHash(bytes);
-                Path = path.Replace(_ipcCallerPenumbra.ModDirectory, "");
+                Path = path;
             }
             else
             {
                 IsFileSwap = false;
                 Path = path;
             }
+            _logger.LogInformation("FileCacheInfo created for {path} | FileSwap:{fileSwap} | GamePath:{gamePath} | Extension:{extension} | Hash:{hash}", path, IsFileSwap, GamePath, Extension, ShortHash);
         }
 
         public FileCacheInfo(TorrentFileDto torrentFileEntry, BitTorrentService bitTorrentService,
-            ApiController apiController, IpcCallerPenumbra ipcCallerPenumbra)
+            ApiController apiController, IpcCallerPenumbra ipcCallerPenumbra, ILogger<FileCacheInfo> logger)
         {
             _bitTorrentService = bitTorrentService;
             _apiController = apiController;
             _ipcCallerPenumbra = ipcCallerPenumbra;
+            _logger = logger;
             GamePath = torrentFileEntry.GamePath;
             Extension = torrentFileEntry.Extension;
             Path = torrentFileEntry.Filename;
             Hash = torrentFileEntry.Hash;
             IsFileSwap = true;
             TorrentFile = torrentFileEntry;
+
+            _logger.LogInformation("FileCacheInfo created via TorrentFileEntry | FileSwap:{fileSwap} | GamePath:{gamePath} | Extension:{extension} | Hash:{hash}", IsFileSwap, GamePath, Extension, ShortHash);
         }
 
         public string Extension { get; private set; }
@@ -57,15 +65,15 @@ namespace PocketSizedUniverse.Services.CharaData.Models
         {
             if (IsFileSwap)
             {
-                if (TorrentFile == null)
-                    TorrentFile = await _apiController.GetTorrentFileForHash(Hash).ConfigureAwait(false);
+                TorrentFile = await _apiController.GetTorrentFileForHash(Hash).ConfigureAwait(false);
                 if (TorrentFile == null)
                 {
-                    var oldPath = System.IO.Path.Combine(_ipcCallerPenumbra!.ModDirectory, Path);
                     var newPath = System.IO.Path.Combine(_bitTorrentService.FilesDirectory, ShortHash + Extension);
-                    File.Move(oldPath, newPath, true);
+                    if (File.Exists(Path))
+                        File.Move(Path, newPath, true);
                     TorrentFile = await _bitTorrentService.CreateAndSeedNewTorrent(newPath, Hash).ConfigureAwait(false);
                 }
+
                 await _bitTorrentService.EnsureTorrentFileAndStart(TorrentFile).ConfigureAwait(false);
             }
         }
@@ -75,14 +83,16 @@ namespace PocketSizedUniverse.Services.CharaData.Models
         public string Path { get; private set; }
         public string GamePath { get; private set; }
         public byte[]? Hash { get; private set; }
+
         public string? ShortHash
         {
             get
             {
                 if (Hash != null)
                 {
-                    return Convert.ToBase64String(Hash);
+                    return Convert.ToBase64String(Hash).Replace("/", "_").Replace("+", "-");
                 }
+
                 return null;
             }
         }
