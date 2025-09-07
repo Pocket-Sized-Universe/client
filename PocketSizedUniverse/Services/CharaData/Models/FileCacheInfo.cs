@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using MonoTorrent;
 using MonoTorrent.Client;
 using PocketSizedUniverse.API.Dto.CharaData;
 using PocketSizedUniverse.API.Dto.Files;
@@ -42,7 +43,7 @@ namespace PocketSizedUniverse.Services.CharaData.Models
                 IsFileSwap = false;
                 Path = path;
             }
-            _logger.LogInformation("FileCacheInfo created for {path} | FileSwap:{fileSwap} | GamePath:{gamePath} | Extension:{extension} | Hash:{hash}", path, IsFileSwap, GamePath, Extension, Hash.ShortHash());
+            //_logger.LogInformation("FileCacheInfo created for {path} | FileSwap:{fileSwap} | GamePath:{gamePath} | Extension:{extension} | Hash:{hash}", path, IsFileSwap, GamePath, Extension, Hash.ShortHash());
         }
 
         public FileCacheInfo(TorrentFileDto torrentFileEntry, BitTorrentService bitTorrentService,
@@ -59,7 +60,7 @@ namespace PocketSizedUniverse.Services.CharaData.Models
             IsFileSwap = true;
             TorrentFile = torrentFileEntry;
 
-            _logger.LogInformation("FileCacheInfo created via TorrentFileEntry | FileSwap:{fileSwap} | GamePath:{gamePath} | Extension:{extension} | Hash:{hash}", IsFileSwap, GamePath, Extension, Hash.ShortHash());
+            //_logger.LogInformation("FileCacheInfo created via TorrentFileEntry | FileSwap:{fileSwap} | GamePath:{gamePath} | Extension:{extension} | Hash:{hash}", IsFileSwap, GamePath, Extension, Hash.ShortHash());
         }
 
         public string Extension { get; private set; }
@@ -76,8 +77,9 @@ namespace PocketSizedUniverse.Services.CharaData.Models
                     var newPath = System.IO.Path.Combine(_bitTorrentService.FilesDirectory, Hash.ShortHash() + Extension);
                     if (File.Exists(Path))
                     {
-                        File.Move(Path, newPath, true);
-                        TorrentFile = await _bitTorrentService.CreateAndSeedNewTorrent(newPath, Hash)
+                        _logger.LogInformation("No torrent for {Path}. Moving to {newPath} for seeding", Path, newPath);
+                        File.Copy(Path, newPath, true);
+                        TorrentFile = await CreateAndSeedNewTorrent(newPath)
                             .ConfigureAwait(false);
                     }
                 }
@@ -85,6 +87,33 @@ namespace PocketSizedUniverse.Services.CharaData.Models
             if (TorrentFile == null) throw new InvalidOperationException("TorrentFile is null");
 
             await _bitTorrentService.EnsureTorrentFileAndStart(TorrentFile).ConfigureAwait(false);
+        }
+
+
+
+        public List<string> BitTorrentTrackers { get; set; } = ["udp://tracker.opentrackr.org:1337/announce"];
+        public async Task<TorrentFileDto> CreateAndSeedNewTorrent(string newPath)
+        {
+            var fileInfo = new FileInfo(Path);
+            var creator = new TorrentCreator()
+            {
+                Comment = "Pocket Sized Universe File Share",
+                CreatedBy = "Pocket Sized Universe Plugin",
+                Publisher = "PSU Plugin",
+            };
+            // Add trackers
+            foreach (var tracker in BitTorrentTrackers)
+            {
+                creator.Announces.Add([tracker]);
+            }
+
+            var torrent = await creator.CreateAsync(new TorrentFileSource(newPath), CancellationToken.None)
+                .ConfigureAwait(false);
+
+            return new TorrentFileDto()
+            {
+                Hash = Hash, Extension = Extension, IsForbidden = false, Data = torrent.Encode(), GamePath = GamePath
+            };
         }
 
         public FileInfo? TrueFile => new FileInfo(System.IO.Path.Combine(_bitTorrentService.FilesDirectory, Path));

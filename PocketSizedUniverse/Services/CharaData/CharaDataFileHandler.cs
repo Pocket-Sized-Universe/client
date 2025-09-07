@@ -63,10 +63,10 @@ public sealed class CharaDataFileHandler : IDisposable
             }
         }
 
-        // foreach (var swap in charaDataDownloadDto.FileRedirects)
-        // {
-        //     modPaths[swap.GamePath] = swap.SwapPath;
-        // }
+        foreach (var swap in charaDataDownloadDto.FileRedirects)
+        {
+            modPaths[swap.GamePath] = swap.SwapPath;
+        }
 
         _logger.LogInformation(
             "[ComputeMissingFiles] Summary: {missingCount} missing files, {modPathCount} existing mod paths, {swapCount} file swaps",

@@ -986,7 +986,8 @@ public sealed partial class CharaDataManager : DisposableMediatorSubscriberBase
             try
             {
                 DataApplicationProgress = "Downloading Missing Files. Please be patient.";
-                await _fileHandler.DownloadFilesAsync(tempHandler, missingFiles, modPaths, token).ConfigureAwait(false);
+                DataApplicationTask = _fileHandler.DownloadFilesAsync(tempHandler, missingFiles, modPaths, token);
+                await DataApplicationTask.ConfigureAwait(false);
             }
             catch (FileNotFoundException)
             {

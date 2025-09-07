@@ -8,6 +8,7 @@ using PocketSizedUniverse.API.Dto.Files;
 using PocketSizedUniverse.MareConfiguration;
 using PocketSizedUniverse.PlayerData.Data;
 using PocketSizedUniverse.PlayerData.Handlers;
+using PocketSizedUniverse.Services.CharaData.Models;
 using PocketSizedUniverse.Services.Mediator;
 using PocketSizedUniverse.Utils;
 using PocketSizedUniverse.WebAPI;
@@ -86,11 +87,7 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
 
     public async Task EnsureTorrentFileAndStart(TorrentFileDto torrentFileDto)
     {
-        var torrentPath = Path.Combine(TorrentsDirectory, torrentFileDto.TorrentName);
-        // Always write fresh torrent data to ensure we have the correct file
-        await File.WriteAllBytesAsync(torrentPath, torrentFileDto.Data).ConfigureAwait(false);
-
-        var torrent = await Torrent.LoadAsync(torrentPath).ConfigureAwait(false);
+        var torrent = await Torrent.LoadAsync(torrentFileDto.Data).ConfigureAwait(false);
         await VerifyAndStartTorrent(torrent).ConfigureAwait(false);
     }
 
@@ -100,32 +97,6 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
             return;
         var manager = await _clientEngine.AddAsync(torrent, FilesDirectory).ConfigureAwait(false);
         await manager.HashCheckAsync(true).ConfigureAwait(false);
-    }
-
-    public async Task<TorrentFileDto> CreateAndSeedNewTorrent(string cachePath, byte[] hash)
-    {
-        var fileInfo = new FileInfo(cachePath);
-        var extension = Path.GetExtension(cachePath);
-        var creator = new TorrentCreator()
-        {
-            Comment = "Pocket Sized Universe File Share",
-            CreatedBy = "Pocket Sized Universe Plugin",
-            Publisher = "PSU Plugin",
-            PieceLength = fileInfo.Length < 16 * 1024 * 1024 ? 65536 : 262144 // 64KB for <16MB, 256KB for larger
-        };
-        // Add trackers
-        foreach (var tracker in _configService.Current.BitTorrentTrackers)
-        {
-            creator.Announces.Add([tracker]);
-        }
-
-        var torrent = await creator.CreateAsync(new TorrentFileSource(cachePath), CancellationToken.None)
-            .ConfigureAwait(false);
-
-        return new TorrentFileDto()
-        {
-            Hash = hash, Extension = extension, IsForbidden = false, Data = torrent.Encode()
-        };
     }
 
     public Dictionary<string, TorrentManager> GetActiveTorrentsByHash()

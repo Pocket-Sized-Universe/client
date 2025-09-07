@@ -65,5 +65,4 @@ public class MareConfig : IMareConfiguration
     public int ListenPort { get; set; } = 42069; // 0 = random
     public int TorrentDownloadRateLimit { get; set; } = 0; // 0 = unlimited
     public int TorrentUploadRateLimit { get; set; } = 0; // 0 = unlimited
-    public List<string> BitTorrentTrackers { get; set; } = ["udp://tracker.openbittorrent.com:80/announce", "udp://tracker.opentrackr.org:1337/announce"];
 }

@@ -150,15 +150,12 @@ public class PlayerDataFactory
 
         foreach (var path in resolvedPaths)
         {
-            _logger.LogInformation("Found {count} files for {path}", path.Value.Count, path.Key);
             if (File.Exists(Path.Combine(_ipcManager.Penumbra.ModDirectory, path.Key)))
             {
                 foreach (var file in path.Value)
                 {
-                    _logger.LogInformation("Found {file}", file);
                     ct.ThrowIfCancellationRequested();
-                    if (string.Equals(file, path.Key, StringComparison.OrdinalIgnoreCase)) continue;
-                    var cacheFile = _fileCacheInfoFactory.CreateFromPath(file, path.Key);
+                    var cacheFile = _fileCacheInfoFactory.CreateFromPath(path.Key, file);
                     await cacheFile.ProcessFile().ConfigureAwait(false);
                     ct.ThrowIfCancellationRequested();
                     if (cacheFile.IsFileSwap)
