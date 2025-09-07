@@ -41,11 +41,6 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         _logger = logger;
         _mediator = mediator;
         _configService = configService;
-
-        // Ensure torrents directory exists
-        Directory.CreateDirectory(TorrentsDirectory);
-        Directory.CreateDirectory(FilesDirectory);
-        Directory.CreateDirectory(CacheDirectory);
         var settings = new EngineSettingsBuilder()
         {
             CacheDirectory = CacheDirectory,
@@ -68,7 +63,9 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
     {
         _logger.LogInformation("Starting BitTorrent service");
 
-
+        Directory.CreateDirectory(TorrentsDirectory);
+        Directory.CreateDirectory(FilesDirectory);
+        Directory.CreateDirectory(CacheDirectory);
         await _clientEngine.StartAllAsync().ConfigureAwait(false);
         _logger.LogInformation("Engine listening on {endpoint}",
             string.Join(',', _clientEngine.Settings.ListenEndPoints.Select(l => l.Value.ToString())));
