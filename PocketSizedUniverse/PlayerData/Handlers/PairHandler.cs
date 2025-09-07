@@ -258,7 +258,6 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
             _applicationCancellationTokenSource = null;
             _downloadCancellationTokenSource?.CancelDispose();
             _downloadCancellationTokenSource = null;
-            _torrentService.Dispose();
             _charaHandler?.Dispose();
             _charaHandler = null;
 

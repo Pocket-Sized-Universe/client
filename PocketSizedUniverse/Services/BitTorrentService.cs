@@ -22,7 +22,7 @@ using CharacterData = PocketSizedUniverse.PlayerData.Data.CharacterData;
 
 namespace PocketSizedUniverse.Services;
 
-public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedService
+public class BitTorrentService : MediatorSubscriberBase
 {
     private readonly ILogger<BitTorrentService> _logger;
     private readonly MareMediator _mediator;
@@ -83,29 +83,26 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         Directory.CreateDirectory(FilesDirectory);
         Directory.CreateDirectory(CacheDirectory);
         _clientEngine = new ClientEngine(settings.ToSettings());
+
+        _ = Task.Run(async () => 
+        {
+            try 
+            {
+                await StartAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to start BitTorrent engine");
+            }
+        });
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync()
     {
         _logger.LogInformation("Starting BitTorrent service");
-
-
         await _clientEngine.StartAllAsync().ConfigureAwait(false);
-        _logger.LogInformation("Engine listening on {endpoint}",
-            string.Join(',', _clientEngine.Settings.ListenEndPoints.Select(l => l.Value.ToString())));
-
-        // Start the engine, which will also start DHT if configured
+        _logger.LogInformation("Engine listening on {endpoint}", string.Join(',', _clientEngine.Settings.ListenEndPoints.Select(l => l.Value.ToString())));
         _logger.LogInformation("BitTorrent engine initialized successfully");
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Stopping BitTorrent service");
-    }
-
-    public void Dispose()
-    {
-        _clientEngine.Dispose();
     }
 
     public async Task EnsureTorrentFileAndStart(TorrentFileDto torrentFileDto)
@@ -118,6 +115,13 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
     {
         try
         {
+            // Check if we already have this torrent in our engine
+            if (_clientEngine.Torrents.Any(t => t.Torrent != null && 
+                                   string.Equals(t.Torrent.Name, torrent.Name, StringComparison.Ordinal)))
+            {
+                return;
+            }
+            
             var manager = await _clientEngine.AddAsync(torrent, FilesDirectory).ConfigureAwait(false);
             await manager.HashCheckAsync(true).ConfigureAwait(false);
         }

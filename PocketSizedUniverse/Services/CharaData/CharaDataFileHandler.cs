@@ -100,7 +100,6 @@ public sealed class CharaDataFileHandler : IDisposable
 
     public void Dispose()
     {
-        _torrentService.Dispose();
     }
 
     public async Task DownloadFilesAsync(GameObjectHandler tempHandler, List<TorrentFileEntry> missingFiles,
