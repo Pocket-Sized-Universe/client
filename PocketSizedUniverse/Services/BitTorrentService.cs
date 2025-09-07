@@ -35,6 +35,23 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
     public string CacheDirectory => Path.Combine(_configService.Current.CacheFolder, "TorrentCache");
     private string DhtNodesPath => Path.Combine(_configService.Current.CacheFolder, "dht.dat");
 
+    private bool CacheDirectoryWritable
+    {
+        get
+        {
+            try
+            {
+                var touchFile = Path.Combine(_configService.Current.CacheFolder, "touch");
+                File.Create(touchFile).Close();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
     public BitTorrentService(ILogger<BitTorrentService> logger, MareMediator mediator,
         MareConfigService configService)
         : base(logger, mediator)
@@ -42,12 +59,11 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         _logger = logger;
         _mediator = mediator;
         _configService = configService;
-
-    }
-
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Starting BitTorrent service");
+        if (!CacheDirectoryWritable)
+        {
+            _configService.Current.CacheFolder = Path.GetTempPath();
+            _configService.Save();
+        }
 
         var settings = new EngineSettingsBuilder()
         {
@@ -67,6 +83,13 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
         Directory.CreateDirectory(FilesDirectory);
         Directory.CreateDirectory(CacheDirectory);
         _clientEngine = new ClientEngine(settings.ToSettings());
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Starting BitTorrent service");
+
+
         await _clientEngine.StartAllAsync().ConfigureAwait(false);
         _logger.LogInformation("Engine listening on {endpoint}",
             string.Join(',', _clientEngine.Settings.ListenEndPoints.Select(l => l.Value.ToString())));
@@ -93,10 +116,15 @@ public class BitTorrentService : MediatorSubscriberBase, IDisposable, IHostedSer
 
     private async Task VerifyAndStartTorrent(Torrent torrent)
     {
-        if (_clientEngine.Torrents.Any(t => string.Equals(t.Name, torrent.Name, StringComparison.Ordinal)))
-            return;
-        var manager = await _clientEngine.AddAsync(torrent, FilesDirectory).ConfigureAwait(false);
-        await manager.HashCheckAsync(true).ConfigureAwait(false);
+        try
+        {
+            var manager = await _clientEngine.AddAsync(torrent, FilesDirectory).ConfigureAwait(false);
+            await manager.HashCheckAsync(true).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error while checking torrent");
+        }
     }
 
     public Dictionary<string, TorrentManager> GetActiveTorrentsByHash()
