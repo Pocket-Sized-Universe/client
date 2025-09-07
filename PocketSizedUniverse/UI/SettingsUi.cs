@@ -315,7 +315,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         _uiShared.IconText(FontAwesomeIcon.UserCog);
         ImGui.SameLine();
         UiSharedService.TextWrapped(") -> \"Character Data Hub\".");
-        if (_uiShared.IconTextButton(FontAwesomeIcon.Running, "Open Mare Character Data Hub"))
+        if (_uiShared.IconTextButton(FontAwesomeIcon.Running, "Open PSU Character Data Hub"))
         {
             Mediator.Publish(new UiToggleMessage(typeof(CharaDataHubUi)));
         }
@@ -328,7 +328,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
         _uiShared.BigText("Storage");
 
         UiSharedService.TextWrapped(
-            "Mare stores downloaded files from paired people permanently. This is to improve loading performance and requiring less downloads. " +
+            "PSU stores downloaded files from paired people permanently. This is to improve loading performance and requiring less downloads. " +
             "The storage governs itself by clearing data beyond the set storage size. Please set the storage size accordingly. It is not necessary to manually clear the storage.");
 
         ImGui.AlignTextToFramePadding();
@@ -363,7 +363,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
             Environment.NewLine
             + "This will solely remove all downloaded data from all players and will require you to re-download everything again." +
             Environment.NewLine
-            + "Mares storage is self-clearing and will not surpass the limit you have set it to." + Environment.NewLine
+            + "PSU's storage is self-clearing and will not surpass the limit you have set it to." + Environment.NewLine
             + "If you still think you need to do this hold CTRL while pressing the button.");
         if (!_readClearCache)
             ImGui.EndDisabled();

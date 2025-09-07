@@ -35,11 +35,11 @@ public sealed class CommandManagerService : IDisposable
         {
             HelpMessage = "Opens the Pocket Sized Universe UI" + Environment.NewLine + Environment.NewLine +
                 "Additional possible commands:" + Environment.NewLine +
-                "\t /psu toggle - Disconnects from Mare, if connected. Connects to Mare, if disconnected" + Environment.NewLine +
-                "\t /psu toggle on|off - Connects or disconnects to Mare respectively" + Environment.NewLine +
-                "\t /psu gpose - Opens the Mare Character Data Hub window" + Environment.NewLine +
-                "\t /psu analyze - Opens the Mare Character Data Analysis window" + Environment.NewLine +
-                "\t /psu settings - Opens the Mare Settings window"
+                "\t /psu toggle - Disconnects from PSU, if connected. Connects to PSU, if disconnected" + Environment.NewLine +
+                "\t /psu toggle on|off - Connects or disconnects to PSU respectively" + Environment.NewLine +
+                "\t /psu gpose - Opens the PSU Character Data Hub window" + Environment.NewLine +
+                "\t /psu analyze - Opens the PSU Character Data Analysis window" + Environment.NewLine +
+                "\t /psu settings - Opens the PSU Settings window"
         });
     }
 

@@ -183,8 +183,8 @@ public partial class IntroUi : WindowMediatorSubscriberBase
 
                     _configService.Save();
                 }
-                UiSharedService.ColorTextWrapped("The File Compactor can save a tremendeous amount of space on the hard disk for downloads through Mare. It will incur a minor CPU penalty on download but can speed up " +
-                    "loading of other characters. It is recommended to keep it enabled. You can change this setting later anytime in the Mare settings.", ImGuiColors.DalamudYellow);
+                UiSharedService.ColorTextWrapped("The File Compactor can save a tremendeous amount of space on the hard disk for downloads through PSU. It will incur a minor CPU penalty on download but can speed up " +
+                    "loading of other characters. It is recommended to keep it enabled. You can change this setting later anytime in the PSU settings.", ImGuiColors.DalamudYellow);
             }
         }
         else if (!_uiShared.ApiController.ServerAlive)
