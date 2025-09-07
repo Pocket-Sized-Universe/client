@@ -490,7 +490,7 @@ public class TopTabMenu
         {
             _mareMediator.Publish(new UiToggleMessage(typeof(EditProfileUi)));
         }
-        UiSharedService.AttachToolTip("Edit your Mare Profile");
+        UiSharedService.AttachToolTip("Edit your PSU Profile");
         ImGui.SameLine();
         if (_uiSharedService.IconTextButton(FontAwesomeIcon.PersonCircleQuestion, "Chara Data Analysis", buttonX))
         {

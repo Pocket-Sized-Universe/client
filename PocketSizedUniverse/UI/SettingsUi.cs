@@ -1262,7 +1262,7 @@ public class SettingsUi : WindowMediatorSubscriberBase
                         }
 
                         bool isAutoLogin = item.AutoLogin;
-                        if (ImGui.Checkbox("Automatically login to Mare", ref isAutoLogin))
+                        if (ImGui.Checkbox("Automatically login to PSU", ref isAutoLogin))
                         {
                             item.AutoLogin = isAutoLogin;
                             _serverConfigurationManager.Save();
