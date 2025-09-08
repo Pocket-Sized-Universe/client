@@ -10,6 +10,8 @@ using PocketSizedUniverse.Services.Mediator;
 using PocketSizedUniverse.WebAPI;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MonoTorrent.Client;
+using PocketSizedUniverse.Services;
 using System.Runtime.InteropServices;
 
 namespace PocketSizedUniverse.UI;
@@ -24,12 +26,13 @@ public sealed class DtrEntry : IDisposable, IHostedService
     private readonly ILogger<DtrEntry> _logger;
     private readonly MareMediator _mareMediator;
     private readonly PairManager _pairManager;
+    private readonly BitTorrentService _bitTorrentService;
     private Task? _runTask;
     private string? _text;
     private string? _tooltip;
     private Colors _colors;
 
-    public DtrEntry(ILogger<DtrEntry> logger, IDtrBar dtrBar, MareConfigService configService, MareMediator mareMediator, PairManager pairManager, ApiController apiController)
+    public DtrEntry(ILogger<DtrEntry> logger, IDtrBar dtrBar, MareConfigService configService, MareMediator mareMediator, PairManager pairManager, ApiController apiController, BitTorrentService bitTorrentService)
     {
         _logger = logger;
         _dtrBar = dtrBar;
@@ -38,6 +41,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
         _mareMediator = mareMediator;
         _pairManager = pairManager;
         _apiController = apiController;
+        _bitTorrentService = bitTorrentService;
     }
 
     public void Dispose()
@@ -157,7 +161,7 @@ public sealed class DtrEntry : IDisposable, IHostedService
                             .Select(x => string.Format("{0}", _configService.Current.PreferNoteInDtrTooltip ? x.GetNote() ?? x.PlayerName : x.PlayerName));
                     }
 
-                    tooltip = $"Pocket Sized Universe: Connected{Environment.NewLine}----------{Environment.NewLine}{string.Join(Environment.NewLine, visiblePairs)}";
+                    tooltip = $"Pocket Sized Universe: Connected{Environment.NewLine}----------{Environment.NewLine}S: {_bitTorrentService.ActiveTorrents.Count(t =>t.State == TorrentState.Seeding)}{Environment.NewLine}L: {_bitTorrentService.ActiveTorrents.Count(t =>t.State != TorrentState.Seeding)}{Environment.NewLine}----------{Environment.NewLine}{string.Join(Environment.NewLine, visiblePairs)}";
                     colors = _configService.Current.DtrColorsPairsInRange;
                 }
                 else
