@@ -21,6 +21,7 @@ using PocketSizedUniverse.WebAPI.SignalR.Utils;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.Extensions.Logging;
 using MonoTorrent.Client;
+using PocketSizedUniverse.MareConfiguration.Configurations;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
@@ -158,6 +159,20 @@ public class SettingsUi : WindowMediatorSubscriberBase
         _uiShared.BigText("Engine Settings");
         _uiShared.DrawHelpText("Changing any of these settings requires a plugin restart to take effect");
         DrawTorrentSettings();
+        if (_apiController.IsSuperSeeder)
+        {
+            _uiShared.BigText("Super Seeder Mode Enabled!");
+            _uiShared.DrawHelpText("You are a super seeder. This means you're contributing more disk space to help the network as a whole. Keep being awesome.");
+            var maxBytes = _configService.Current.MaxFolderBytes;
+            if (ImGui.InputLong("Max Folder Size (MB)", ref maxBytes, 1, 1000000))
+            {
+                if (maxBytes < MareConfig.DefaultMaxFolderBytes)
+                    maxBytes = MareConfig.DefaultMaxFolderBytes;
+                _configService.Current.MaxFolderBytes = maxBytes;
+                _configService.Save();
+            }
+            _uiShared.DrawHelpText("Requires a restart to take effect. Will not delete files if you go over the limit.");
+        }
         _uiShared.BigText("Active Torrents");
         _uiShared.DrawHelpText("This section shows the active torrents and their progress.");
         var torrentTable = new TorrentTable(_bitTorrentService.ActiveTorrents);

@@ -14,6 +14,7 @@ using PocketSizedUniverse.WebAPI.SignalR;
 using PocketSizedUniverse.WebAPI.SignalR.Utils;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
+using PocketSizedUniverse.API.Dto.Files;
 using System.Reflection;
 
 namespace PocketSizedUniverse.WebAPI;
@@ -76,6 +77,8 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
 
     public bool IsConnected => ServerState == ServerState.Connected;
 
+    public bool IsSuperSeeder => _connectionDto?.IsSuperSeeder ?? false;
+
     public bool IsCurrentVersion => (Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0, 0)) >= (_connectionDto?.CurrentClientVersion ?? new Version(0, 0, 0, 0));
 
     public int OnlineUsers => SystemInfoDto.OnlineUsers;
@@ -101,6 +104,20 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IM
     public async Task<bool> CheckClientHealth()
     {
         return await _mareHub!.InvokeAsync<bool>(nameof(CheckClientHealth)).ConfigureAwait(false);
+    }
+
+    public async Task<List<TorrentFileDto>> GetSuperSeederPackage(long maxFiles)
+    {
+        if (!IsSuperSeeder) return new List<TorrentFileDto>();
+        try
+        {
+            return await _mareHub!.InvokeAsync<List<TorrentFileDto>>(nameof(GetSuperSeederPackage), maxFiles).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting SuperSeeder package");
+            return new List<TorrentFileDto>();
+        }
     }
 
     public async Task CreateConnectionsAsync()

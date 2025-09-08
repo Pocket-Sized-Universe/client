@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using PocketSizedUniverse.API.Dto.CharaData;
 using PocketSizedUniverse.API.Dto.Files;
 using PocketSizedUniverse.Interop.Ipc;
+using PocketSizedUniverse.MareConfiguration;
 using PocketSizedUniverse.Services.CharaData.Models;
 using PocketSizedUniverse.WebAPI;
 using Serilog.Core;
@@ -15,29 +16,31 @@ namespace PocketSizedUniverse.Services
         private readonly IpcCallerPenumbra _ipcCallerPenumbra;
         private readonly ILogger<FileCacheInfoFactory> _logger;
         private readonly ILoggerFactory _loggerFactory;
+        private readonly MareConfigService _mareConfigService;
 
-        public FileCacheInfoFactory(ApiController apiController, BitTorrentService bitTorrentService, IpcCallerPenumbra ipcCallerPenumbra, ILogger<FileCacheInfoFactory> logger, ILoggerFactory loggerFactory)
+        public FileCacheInfoFactory(ApiController apiController, BitTorrentService bitTorrentService, IpcCallerPenumbra ipcCallerPenumbra, ILogger<FileCacheInfoFactory> logger, ILoggerFactory loggerFactory, MareConfigService mareConfigService)
         {
             _apiController = apiController;
             _bitTorrentService = bitTorrentService;
             _ipcCallerPenumbra = ipcCallerPenumbra;
             _logger = logger;
             _loggerFactory = loggerFactory;
+            _mareConfigService = mareConfigService;
         }
 
         public FileCacheInfo CreateFromPath(string path, string gamePath)
         {
-            return new FileCacheInfo(path, gamePath, _bitTorrentService, _apiController, _ipcCallerPenumbra, _loggerFactory.CreateLogger<FileCacheInfo>());
+            return new FileCacheInfo(path, gamePath, _bitTorrentService, _apiController, _ipcCallerPenumbra, _loggerFactory.CreateLogger<FileCacheInfo>(), _mareConfigService);
         }
 
         public FileCacheInfo CreateFromTorrentFileEntry(TorrentFileEntry torrentFileEntry)
         {
-            return new FileCacheInfo(torrentFileEntry.TorrentFile, _bitTorrentService, _apiController, _ipcCallerPenumbra, _loggerFactory.CreateLogger<FileCacheInfo>());
+            return new FileCacheInfo(torrentFileEntry.TorrentFile, _bitTorrentService, _apiController, _ipcCallerPenumbra, _loggerFactory.CreateLogger<FileCacheInfo>(), _mareConfigService);
         }
 
         public FileCacheInfo CreateFromTorrentFileDto(TorrentFileDto torrentFileDto)
         {
-            return new FileCacheInfo(torrentFileDto, _bitTorrentService, _apiController, _ipcCallerPenumbra, _loggerFactory.CreateLogger<FileCacheInfo>());
+            return new FileCacheInfo(torrentFileDto, _bitTorrentService, _apiController, _ipcCallerPenumbra, _loggerFactory.CreateLogger<FileCacheInfo>(), _mareConfigService);
         }
     }
 }

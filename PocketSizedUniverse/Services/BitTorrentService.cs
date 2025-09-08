@@ -26,6 +26,7 @@ public class BitTorrentService : MediatorSubscriberBase
 {
     private readonly ILogger<BitTorrentService> _logger;
     private readonly MareMediator _mediator;
+    private readonly ApiController _apiController;
     private readonly MareConfigService _configService;
     private readonly SemaphoreSlim _torrentOperationLock = new(1, 1);
     private readonly HashSet<byte[]> _managedTorrentHashes = new();
@@ -38,12 +39,13 @@ public class BitTorrentService : MediatorSubscriberBase
     private string DhtNodesPath => Path.Combine(_configService.Current.CacheFolder, "dht.dat");
 
     public BitTorrentService(ILogger<BitTorrentService> logger, MareMediator mediator,
-        MareConfigService configService)
+        MareConfigService configService, ApiController apiController)
         : base(logger, mediator)
     {
         _logger = logger;
         _mediator = mediator;
         _configService = configService;
+        _apiController = apiController;
 
         var settings = new EngineSettingsBuilder()
         {
@@ -77,6 +79,8 @@ public class BitTorrentService : MediatorSubscriberBase
         });
     }
 
+    public long TotalFileBytes => _clientEngine.Torrents.Sum(t => t.Files.Sum(f => f.Length));
+
     public async Task StartAsync()
     {
         _logger.LogInformation("Starting BitTorrent service");
@@ -99,6 +103,8 @@ public class BitTorrentService : MediatorSubscriberBase
             }
 
             await VerifyAndStartTorrent(torrent, infoHash).ConfigureAwait(false);
+
+
         }
         finally
         {

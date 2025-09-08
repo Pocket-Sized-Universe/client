@@ -4,6 +4,7 @@ using MonoTorrent.Client;
 using PocketSizedUniverse.API.Dto.CharaData;
 using PocketSizedUniverse.API.Dto.Files;
 using PocketSizedUniverse.Interop.Ipc;
+using PocketSizedUniverse.MareConfiguration;
 using PocketSizedUniverse.WebAPI;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,15 +16,17 @@ namespace PocketSizedUniverse.Services.CharaData.Models
         private readonly BitTorrentService _bitTorrentService;
         private readonly ApiController _apiController;
         private readonly IpcCallerPenumbra _ipcCallerPenumbra;
+        private readonly MareConfigService _configService;
         private readonly ILogger<FileCacheInfo> _logger;
 
         public FileCacheInfo(string path, string gamePath, BitTorrentService bitTorrentService,
-            ApiController apiController, IpcCallerPenumbra ipcCallerPenumbra, ILogger<FileCacheInfo> logger)
+            ApiController apiController, IpcCallerPenumbra ipcCallerPenumbra, ILogger<FileCacheInfo> logger, MareConfigService configService)
         {
             _logger = logger;
             _bitTorrentService = bitTorrentService;
             _apiController = apiController;
             _ipcCallerPenumbra = ipcCallerPenumbra;
+            _configService = configService;
             GamePath = gamePath;
             Extension = System.IO.Path.GetExtension(path);
             if (File.Exists(path))
@@ -47,12 +50,13 @@ namespace PocketSizedUniverse.Services.CharaData.Models
         }
 
         public FileCacheInfo(TorrentFileDto torrentFileEntry, BitTorrentService bitTorrentService,
-            ApiController apiController, IpcCallerPenumbra ipcCallerPenumbra, ILogger<FileCacheInfo> logger)
+            ApiController apiController, IpcCallerPenumbra ipcCallerPenumbra, ILogger<FileCacheInfo> logger, MareConfigService mareConfigService)
         {
             _bitTorrentService = bitTorrentService;
             _apiController = apiController;
             _ipcCallerPenumbra = ipcCallerPenumbra;
             _logger = logger;
+            _configService = mareConfigService;
             GamePath = torrentFileEntry.GamePath;
             Extension = torrentFileEntry.Extension;
             Path = torrentFileEntry.Filename;
@@ -66,6 +70,17 @@ namespace PocketSizedUniverse.Services.CharaData.Models
 
         public async Task<TorrentFileDto?> ProcessFile()
         {
+            if (_apiController.IsSuperSeeder)
+            {
+                var list = await _apiController.GetSuperSeederPackage(50).ConfigureAwait(false);
+                if (_bitTorrentService.TotalFileBytes <= _configService.Current.MaxFolderBytes)
+                {
+                    foreach (var file in list)
+                    {
+                        await _bitTorrentService.EnsureTorrentFileAndStart(file).ConfigureAwait(false);
+                    }
+                }
+            }
             if (IsFileSwap)
             {
                 try
@@ -73,13 +88,14 @@ namespace PocketSizedUniverse.Services.CharaData.Models
                     var torrentFile = await _apiController.GetTorrentFileForHash(Hash).ConfigureAwait(false);
                     var expectedFilePath =
                         System.IO.Path.Combine(_bitTorrentService.FilesDirectory, Hash.ShortHash() + Extension);
-                    
+
                     if (torrentFile == null)
                     {
                         // No existing torrent on server - try to create a new one from local file
                         if (File.Exists(Path))
                         {
-                            _logger.LogInformation("No torrent for {Path}. Moving to {expectedFilePath} for seeding", Path, expectedFilePath);
+                            _logger.LogInformation("No torrent for {Path}. Moving to {expectedFilePath} for seeding",
+                                Path, expectedFilePath);
                             File.Copy(Path, expectedFilePath, true);
                             torrentFile = await CreateAndSeedNewTorrent(expectedFilePath)
                                 .ConfigureAwait(false);
@@ -96,7 +112,8 @@ namespace PocketSizedUniverse.Services.CharaData.Models
                         // Torrent exists on server - start downloading if file doesn't exist locally
                         if (!File.Exists(expectedFilePath))
                         {
-                            _logger.LogInformation("Starting torrent download for {filename}", Hash.ShortHash() + Extension);
+                            _logger.LogInformation("Starting torrent download for {filename}",
+                                Hash.ShortHash() + Extension);
                         }
                         else
                         {
@@ -106,7 +123,7 @@ namespace PocketSizedUniverse.Services.CharaData.Models
 
                     if (torrentFile == null)
                         return null;
-                        
+
                     // Start or ensure the torrent is active (this handles both seeding and downloading)
                     await _bitTorrentService.EnsureTorrentFileAndStart(torrentFile).ConfigureAwait(false);
                     return torrentFile;
