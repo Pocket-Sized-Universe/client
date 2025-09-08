@@ -65,6 +65,6 @@ public class MareConfig : IMareConfiguration
     public int ListenPort { get; set; } = 42069; // 0 = random
     public int TorrentDownloadRateLimit { get; set; } = 0; // 0 = unlimited
     public int TorrentUploadRateLimit { get; set; } = 0; // 0 = unlimited
-    public const long DefaultMaxFolderBytes = 50 * 1024 * 1024;
+    public const long DefaultMaxFolderBytes = 50 * 1024;
     public long MaxFolderBytes { get; set; } = DefaultMaxFolderBytes;
 }
