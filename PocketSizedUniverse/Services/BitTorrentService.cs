@@ -27,6 +27,8 @@ public class BitTorrentService : MediatorSubscriberBase
     private readonly ILogger<BitTorrentService> _logger;
     private readonly MareMediator _mediator;
     private readonly MareConfigService _configService;
+    private readonly SemaphoreSlim _torrentOperationLock = new(1, 1);
+    private readonly HashSet<byte[]> _managedTorrentHashes = new();
 
     private ClientEngine _clientEngine;
 
@@ -35,23 +37,6 @@ public class BitTorrentService : MediatorSubscriberBase
     public string CacheDirectory => Path.Combine(_configService.Current.CacheFolder, "TorrentCache");
     private string DhtNodesPath => Path.Combine(_configService.Current.CacheFolder, "dht.dat");
 
-    private bool CacheDirectoryWritable
-    {
-        get
-        {
-            try
-            {
-                var touchFile = Path.Combine(_configService.Current.CacheFolder, "touch");
-                File.Create(touchFile).Close();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-    }
-
     public BitTorrentService(ILogger<BitTorrentService> logger, MareMediator mediator,
         MareConfigService configService)
         : base(logger, mediator)
@@ -59,11 +44,6 @@ public class BitTorrentService : MediatorSubscriberBase
         _logger = logger;
         _mediator = mediator;
         _configService = configService;
-        if (!CacheDirectoryWritable)
-        {
-            _configService.Current.CacheFolder = Path.GetTempPath();
-            _configService.Save();
-        }
 
         var settings = new EngineSettingsBuilder()
         {
@@ -108,20 +88,30 @@ public class BitTorrentService : MediatorSubscriberBase
     public async Task EnsureTorrentFileAndStart(TorrentFileDto torrentFileDto)
     {
         var torrent = await Torrent.LoadAsync(torrentFileDto.Data).ConfigureAwait(false);
-        await VerifyAndStartTorrent(torrent).ConfigureAwait(false);
+        var infoHash = torrentFileDto.Hash;
+        
+        await _torrentOperationLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (!_managedTorrentHashes.Add(infoHash))
+            {
+                return; // Already managed
+            }
+
+            await VerifyAndStartTorrent(torrent, infoHash).ConfigureAwait(false);
+        }
+        finally
+        {
+            _torrentOperationLock.Release();
+        }
     }
 
-    private async Task VerifyAndStartTorrent(Torrent torrent)
+    private async Task VerifyAndStartTorrent(Torrent torrent, byte[] hash)
     {
         try
         {
-            // Check if we already have this torrent in our engine
-            if (_clientEngine.Torrents.Any(t => t.Torrent != null && 
-                                   string.Equals(t.Torrent.Name, torrent.Name, StringComparison.Ordinal)))
-            {
+            if (_clientEngine.Torrents.Any(t => string.Equals(t.Name, torrent.Name, StringComparison.OrdinalIgnoreCase)))
                 return;
-            }
-            
             var manager = await _clientEngine.AddAsync(torrent, FilesDirectory).ConfigureAwait(false);
             await manager.HashCheckAsync(true).ConfigureAwait(false);
         }
@@ -142,5 +132,5 @@ public class BitTorrentService : MediatorSubscriberBase
         return activeTorrents;
     }
 
-    public IReadOnlyCollection<TorrentManager> ActiveTorrents => _clientEngine.Torrents.AsReadOnly();
+    public IReadOnlyCollection<TorrentManager> ActiveTorrents => _clientEngine.Torrents.ToList().AsReadOnly();
 }

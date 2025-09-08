@@ -58,40 +58,71 @@ namespace PocketSizedUniverse.Services.CharaData.Models
             Path = torrentFileEntry.Filename;
             Hash = torrentFileEntry.Hash;
             IsFileSwap = true;
-            TorrentFile = torrentFileEntry;
 
             //_logger.LogInformation("FileCacheInfo created via TorrentFileEntry | FileSwap:{fileSwap} | GamePath:{gamePath} | Extension:{extension} | Hash:{hash}", IsFileSwap, GamePath, Extension, Hash.ShortHash());
         }
 
         public string Extension { get; private set; }
 
-        public TorrentFileDto? TorrentFile { get; private set; }
-
-        public async Task ProcessFile()
+        public async Task<TorrentFileDto?> ProcessFile()
         {
-            if (IsFileSwap && TorrentFile == null)
+            if (IsFileSwap)
             {
-                TorrentFile = await _apiController.GetTorrentFileForHash(Hash).ConfigureAwait(false);
-                if (TorrentFile == null)
+                try
                 {
-                    var newPath = System.IO.Path.Combine(_bitTorrentService.FilesDirectory, Hash.ShortHash() + Extension);
-                    if (File.Exists(Path))
+                    var torrentFile = await _apiController.GetTorrentFileForHash(Hash).ConfigureAwait(false);
+                    var expectedFilePath =
+                        System.IO.Path.Combine(_bitTorrentService.FilesDirectory, Hash.ShortHash() + Extension);
+                    
+                    if (torrentFile == null)
                     {
-                        _logger.LogInformation("No torrent for {Path}. Moving to {newPath} for seeding", Path, newPath);
-                        File.Copy(Path, newPath, true);
-                        TorrentFile = await CreateAndSeedNewTorrent(newPath)
-                            .ConfigureAwait(false);
+                        // No existing torrent on server - try to create a new one from local file
+                        if (File.Exists(Path))
+                        {
+                            _logger.LogInformation("No torrent for {Path}. Moving to {expectedFilePath} for seeding", Path, expectedFilePath);
+                            File.Copy(Path, expectedFilePath, true);
+                            torrentFile = await CreateAndSeedNewTorrent(expectedFilePath)
+                                .ConfigureAwait(false);
+                            await _apiController.CreateNewTorrentFileEntry(torrentFile).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Cannot create torrent - source file does not exist: {Path}", Path);
+                            return null;
+                        }
                     }
+                    else
+                    {
+                        // Torrent exists on server - start downloading if file doesn't exist locally
+                        if (!File.Exists(expectedFilePath))
+                        {
+                            _logger.LogInformation("Starting torrent download for {filename}", Hash.ShortHash() + Extension);
+                        }
+                        else
+                        {
+                            _logger.LogDebug("File already exists locally: {filename}", Hash.ShortHash() + Extension);
+                        }
+                    }
+
+                    if (torrentFile == null)
+                        return null;
+                        
+                    // Start or ensure the torrent is active (this handles both seeding and downloading)
+                    await _bitTorrentService.EnsureTorrentFileAndStart(torrentFile).ConfigureAwait(false);
+                    return torrentFile;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during torrent file processing");
                 }
             }
-            if (TorrentFile == null) throw new InvalidOperationException("TorrentFile is null");
 
-            await _bitTorrentService.EnsureTorrentFileAndStart(TorrentFile).ConfigureAwait(false);
+            return null;
         }
 
 
-
         public List<string> BitTorrentTrackers { get; set; } = ["udp://tracker.opentrackr.org:1337/announce"];
+
         public async Task<TorrentFileDto> CreateAndSeedNewTorrent(string newPath)
         {
             var fileInfo = new FileInfo(Path);
@@ -112,11 +143,25 @@ namespace PocketSizedUniverse.Services.CharaData.Models
 
             return new TorrentFileDto()
             {
-                Hash = Hash, Extension = Extension, IsForbidden = false, Data = torrent.Encode(), GamePath = GamePath
+                Hash = Hash,
+                Extension = Extension,
+                IsForbidden = false,
+                Data = torrent.Encode(),
+                GamePath = GamePath
             };
         }
 
-        public FileInfo? TrueFile => new FileInfo(System.IO.Path.Combine(_bitTorrentService.FilesDirectory, Path));
+        public FileInfo? TrueFile 
+        {
+            get 
+            {
+                // If Path is just a filename (no directory separators), combine with FilesDirectory
+                // If Path is already a full path, use it as-is
+                string fullPath = System.IO.Path.IsPathRooted(Path) ? Path : System.IO.Path.Combine(_bitTorrentService.FilesDirectory, Path);
+                var fileInfo = new FileInfo(fullPath);
+                return fileInfo.Exists ? fileInfo : null;
+            }
+        }
 
         public string Path { get; private set; }
         public string GamePath { get; private set; }

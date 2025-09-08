@@ -244,4 +244,18 @@ public partial class ApiController
             return null;
         }
     }
+
+    public async Task CreateNewTorrentFileEntry(TorrentFileDto torrentFileDto)
+    {
+        if (!IsConnected) return;
+
+        try
+        {
+            await _mareHub!.InvokeAsync(nameof(CreateNewTorrentFileEntry), torrentFileDto).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex,  "Failed to create torrent file for hash {hash}", torrentFileDto.Hash);
+        }
+    }
 }

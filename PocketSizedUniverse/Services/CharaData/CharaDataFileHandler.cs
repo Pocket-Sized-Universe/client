@@ -48,13 +48,13 @@ public sealed class CharaDataFileHandler : IDisposable
         foreach (var file in charaDataDownloadDto.FileSwaps)
         {
             var localCache = _fileCacheInfoFactory.CreateFromTorrentFileEntry(file);
-            localCache.ProcessFile().GetAwaiter().GetResult();
+            var data = localCache.ProcessFile().GetAwaiter().GetResult();
             var localCacheFile = localCache.TrueFile;
             if (localCacheFile == null)
             {
-                if (localCache.TorrentFile != null)
+                if (data != null)
                 {
-                    missingFiles.Add(new TorrentFileEntry(file.Hash, file.GamePath, localCache.TorrentFile));
+                    missingFiles.Add(new TorrentFileEntry(file.Hash, file.GamePath, data));
                 }
             }
             else

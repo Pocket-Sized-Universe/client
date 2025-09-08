@@ -150,18 +150,17 @@ public class PlayerDataFactory
 
         foreach (var path in resolvedPaths)
         {
-            if (File.Exists(Path.Combine(_ipcManager.Penumbra.ModDirectory, path.Key)))
+            if (File.Exists(path.Key))
             {
                 foreach (var file in path.Value)
                 {
                     ct.ThrowIfCancellationRequested();
                     var cacheFile = _fileCacheInfoFactory.CreateFromPath(path.Key, file);
-                    await cacheFile.ProcessFile().ConfigureAwait(false);
+                    var data = await cacheFile.ProcessFile().ConfigureAwait(false);
                     ct.ThrowIfCancellationRequested();
                     if (cacheFile.IsFileSwap)
                     {
-
-                        TorrentFileEntry torrentFile = new(cacheFile.Hash!, file, cacheFile.TorrentFile!);
+                        TorrentFileEntry torrentFile = new(cacheFile.Hash!, file, data!);
                         fragment.FileSwaps.Add(torrentFile);
                     }
                 }

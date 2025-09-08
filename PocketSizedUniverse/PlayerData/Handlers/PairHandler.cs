@@ -829,15 +829,15 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                     // Process file synchronously in this context since we're already in Parallel.ForEach
                     try
                     {
-                        fileCache.ProcessFile().ConfigureAwait(false).GetAwaiter().GetResult();
+                        var data = fileCache.ProcessFile().ConfigureAwait(false).GetAwaiter().GetResult();
                         var trueFile = fileCache.TrueFile;
-                        if (trueFile != null)
+                        if (trueFile?.Exists ?? false)
                         {
                             outputDict[(item.GamePath, item.Hash)] = trueFile.FullName;
                         }
                         else
                         {
-                            missingFiles.Add(item);
+                            missingFiles.Add(new TorrentFileEntry(fileCache.Hash, fileCache.GamePath, data));
                         }
                     }
                     catch (Exception ex)
