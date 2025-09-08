@@ -525,9 +525,12 @@ public sealed class PairHandler : DisposableMediatorSubscriberBase
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(2), downloadToken).ConfigureAwait(false);
+                // Re-calculate to see if we still have missing files
+                toDownloadReplacements = TryCalculateModdedDictionary(applicationBase, charaData, out moddedPaths, downloadToken);
             }
 
-            return;
+            // Files downloaded successfully, continue to application phase
+            Logger.LogDebug("[BASE-{appBase}] File download phase complete for player {name}, proceeding to application", applicationBase, PlayerName);
         }
 
         downloadToken.ThrowIfCancellationRequested();

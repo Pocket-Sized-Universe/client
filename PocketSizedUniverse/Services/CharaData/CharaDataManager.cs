@@ -129,16 +129,24 @@ public sealed partial class CharaDataManager : DisposableMediatorSubscriberBase
     {
         return UiBlockingComputation = DataApplicationTask = Task.Run(async () =>
         {
-            if (string.IsNullOrEmpty(charaName)) return;
+            Logger.LogInformation("ApplyCharaData called for character: {charaName}, dataId: {dataId}", charaName, dataMetaInfoDto.Id);
+            if (string.IsNullOrEmpty(charaName))
+            {
+                Logger.LogWarning("ApplyCharaData: charaName is null or empty, aborting");
+                return;
+            }
 
+            Logger.LogInformation("Calling CharaDataDownload for {uploaderId}:{dataId}", dataMetaInfoDto.Uploader.UID, dataMetaInfoDto.Id);
             var download = await _apiController
                 .CharaDataDownload(dataMetaInfoDto.Uploader.UID + ":" + dataMetaInfoDto.Id).ConfigureAwait(false);
             if (download == null)
             {
+                Logger.LogWarning("CharaDataDownload returned null for {uploaderId}:{dataId}", dataMetaInfoDto.Uploader.UID, dataMetaInfoDto.Id);
                 DataApplicationTask = null;
                 return;
             }
 
+            Logger.LogInformation("CharaDataDownload successful, calling DownloadAndApplyDataAsync for {charaName}", charaName);
             await DownloadAndAplyDataAsync(charaName, download, dataMetaInfoDto, false).ConfigureAwait(false);
         });
     }
@@ -147,10 +155,16 @@ public sealed partial class CharaDataManager : DisposableMediatorSubscriberBase
     {
         return UiBlockingComputation = DataApplicationTask = Task.Run(async () =>
         {
+            Logger.LogInformation("ApplyCharaDataToGposeTarget called for dataId: {dataId}", dataMetaInfoDto.Id);
             var obj = await _dalamudUtilService.GetGposeTargetGameObjectAsync().ConfigureAwait(false);
             var charaName = obj?.Name.TextValue ?? string.Empty;
-            if (string.IsNullOrEmpty(charaName)) return;
+            if (string.IsNullOrEmpty(charaName))
+            {
+                Logger.LogWarning("ApplyCharaDataToGposeTarget: No valid GPose target found");
+                return;
+            }
 
+            Logger.LogInformation("GPose target found: {charaName}, calling ApplyCharaData", charaName);
             await ApplyCharaData(dataMetaInfoDto, charaName).ConfigureAwait(false);
         });
     }
@@ -951,6 +965,7 @@ public sealed partial class CharaDataManager : DisposableMediatorSubscriberBase
     private async Task DownloadAndAplyDataAsync(string charaName, CharaDataDownloadDto charaDataDownloadDto,
         CharaDataMetaInfoDto metaInfo, bool autoRevert = true)
     {
+        Logger.LogInformation("DownloadAndApplyDataAsync called for character: {charaName}, dataId: {dataId}", charaName, charaDataDownloadDto.Id);
         _applicationCts = _applicationCts.CancelRecreate();
         var token = _applicationCts.Token;
         ICharacter? chara = (await _dalamudUtilService
@@ -958,7 +973,10 @@ public sealed partial class CharaDataManager : DisposableMediatorSubscriberBase
             .ConfigureAwait(false));
 
         if (chara == null)
+        {
+            Logger.LogWarning("DownloadAndApplyDataAsync: Character {charaName} not found in object table", charaName);
             return;
+        }
 
         var applicationId = Guid.NewGuid();
 
@@ -975,11 +993,15 @@ public sealed partial class CharaDataManager : DisposableMediatorSubscriberBase
         _fileHandler.ComputeMissingFiles(charaDataDownloadDto, out modPaths, out missingFiles);
 
         Logger.LogInformation("[{appId}] Found {missingCount} missing files and {modPathCount} existing mod paths",
-            missingFiles.Count, modPaths.Count);
+            applicationId, missingFiles.Count, modPaths.Count);
 
         using GameObjectHandler? tempHandler =
             await _characterHandler.TryCreateGameObjectHandler(chara.ObjectIndex).ConfigureAwait(false);
-        if (tempHandler == null) return;
+        if (tempHandler == null)
+        {
+            Logger.LogWarning("[{appId}] Failed to create GameObjectHandler for character {charaName}", applicationId, charaName);
+            return;
+        }
 
         if (missingFiles.Any())
         {
